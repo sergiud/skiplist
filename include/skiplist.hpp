@@ -291,6 +291,26 @@ public:
         return reverse_iterator(begin());
     }
 
+    const_reverse_iterator crbegin() const
+    {
+        return const_reverse_iterator(end());
+    }
+
+    const_reverse_iterator crend() const
+    {
+        return const_reverse_iterator(begin());
+    }
+
+    const_reverse_iterator rbegin() const
+    {
+        return crbegin();
+    }
+
+    const_reverse_iterator rend() const
+    {
+        return crend();
+    }
+
     const_reference front() const
     {
         return const_cast<Skiplist*>(this)->front();
@@ -746,6 +766,50 @@ inline bool Skiplist<Key, T, Engine, Compare,
 {
     assert(list == other.list);
     return !(*this == other);
+}
+
+template<class Key, class T, class Engine, class Compare, class Allocator>
+inline bool operator==(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
+    const Skiplist<Key, T, Engine, Compare, Allocator>& rhs)
+{
+    return lhs.size() == rhs.size() &&
+        std::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
+
+template<class Key, class T, class Engine, class Compare, class Allocator>
+inline bool operator!=(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
+    const Skiplist<Key, T, Engine, Compare, Allocator>& rhs)
+{
+    return !(lhs == rhs);
+}
+
+template<class Key, class T, class Engine, class Compare, class Allocator>
+inline bool operator<(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
+    const Skiplist<Key, T, Engine, Compare, Allocator>& rhs)
+{
+    return std::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(),
+        rhs.end());
+}
+
+template<class Key, class T, class Engine, class Compare, class Allocator>
+inline bool operator<=(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
+    const Skiplist<Key, T, Engine, Compare, Allocator>& rhs)
+{
+    return lhs < rhs || lhs == rhs;
+}
+
+template<class Key, class T, class Engine, class Compare, class Allocator>
+inline bool operator>(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
+    const Skiplist<Key, T, Engine, Compare, Allocator>& rhs)
+{
+    return !(lhs < rhs) && lhs != rhs;
+}
+
+template<class Key, class T, class Engine, class Compare, class Allocator>
+inline bool operator>=(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
+    const Skiplist<Key, T, Engine, Compare, Allocator>& rhs)
+{
+    return lhs > rhs || lhs == rhs;
 }
 
 namespace std {

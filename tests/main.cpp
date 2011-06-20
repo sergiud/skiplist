@@ -225,4 +225,23 @@ BOOST_AUTO_TEST_CASE(move)
     BOOST_CHECK_EQUAL(s2.size(), 9);
 }
 
+BOOST_AUTO_TEST_CASE(comparison)
+{
+    Skiplist<int, int, boost::random::mt19937> s;
+
+    s.insert(std::make_pair(1, 1));
+    s.insert(std::make_pair(10, 2));
+    s.insert(std::make_pair(5, 1));
+    s.insert(std::make_pair(15, 1));
+    s.insert(std::make_pair(0, 1));
+    s.insert(std::make_pair(11, 1));
+    s.insert(std::make_pair(8, 1));
+    s.insert(std::make_pair(20, 1));
+    s.insert(std::make_pair(-1, 1));
+
+    Skiplist<int, int, boost::random::mt19937> s1 = s;
+
+    BOOST_CHECK(s == s1);
+}
+
 #endif // HAVE_CPP0X
