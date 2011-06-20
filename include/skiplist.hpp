@@ -194,14 +194,36 @@ public:
     }
 
     Skiplist(Skiplist&& other)
+        : engine_(std::move(other.engine_))
+        , nallocator_(std::move(other.nallocator_))
+        , allocator_(std::move(other.allocator_))
+        , eallocator_(std::move(other.eallocator_))
+        , compare_(std::move(other.compare_))
+        , size_(other.size_)
+        , block_(other.block_)
+        , head_(other.head_)
+        , tail_(other.tail_)
+        , end_(other.end_)
     {
+        other.size_ = 0;
+        other.block_ = NULL;
+        other.head_ = NULL;
+        other.tail_ = NULL;
+        other.end_ = NULL;
+    }
+
+    Skiplist& operator=(Skiplist&& other)
+    {
+        Skiplist(std::move(other)).swap(*this);
+        return *this;
     }
 
 #endif // HAVE_CPP0X
 
     ~Skiplist()
     {
-        xtidy();
+        if (block_)
+            xtidy();
     }
 
     bool empty() const
@@ -301,12 +323,6 @@ public:
         swap(head_, other.head_);
         swap(tail_, other.tail_);
         swap(end_, other.end_);
-    }
-
-    Skiplist& operator=(const Skiplist& other)
-    {
-        Skiplist(other).swap(*this);
-        return *this;
     }
 
     allocator_type get_allocator() const
@@ -582,6 +598,11 @@ private:
 
     void xtidy()
     {
+        assert(block_);
+        assert(head_);
+        assert(tail_);
+        assert(end_);
+
         xclear();
 
         nallocator_.destroy(head_);
