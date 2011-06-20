@@ -123,7 +123,7 @@ public:
 
         pointer operator->()
         {
-            return const_cast<reference>(const_iterator::operator->());
+            return const_cast<pointer>(const_iterator::operator->());
         }
     };
 
@@ -137,6 +137,7 @@ public:
 
     explicit Skiplist(const Allocator& allocator)
         : allocator_(allocator)
+        , nallocator_(allocator)
         , eallocator_(allocator)
     {
         xinit();
@@ -146,6 +147,7 @@ public:
             const Allocator& allocator = Allocator())
         : engine_(engine)
         , allocator_(allocator)
+        , nallocator_(allocator)
         , eallocator_(allocator)
     {
         xinit();
@@ -155,6 +157,7 @@ public:
         const Allocator& allocator = Allocator())
         : engine_(engine)
         , allocator_(allocator)
+        , nallocator_(allocator)
         , eallocator_(allocator)
         , compare_(predicate)
     {
@@ -163,7 +166,9 @@ public:
 
     Skiplist(const Skiplist& other)
         : engine_(other.engine_)
+        , nallocator_(other.nallocator_)
         , allocator_(other.allocator_)
+        , eallocator_(other.aallocator_)
         , size_(other.size_)
         , compare_(other.compare_)
     {
@@ -214,12 +219,12 @@ public:
 
     const_iterator cbegin() const
     {
-        return const_iterator(this, &first_);
+        return const_iterator(this, head_);
     }
 
     const_iterator cend() const
     {
-        return const_iterator(this, &end_);
+        return const_iterator(this, tail_);
     }
 
     const_iterator begin() const
@@ -234,12 +239,12 @@ public:
 
     iterator begin()
     {
-        return iterator(this, &first_);
+        return iterator(this, head_);
     }
 
     iterator end()
     {
-        return iterator(this, &end_);
+        return iterator(this, tail_);
     }
 
     reverse_iterator rbegin()
@@ -264,12 +269,12 @@ public:
 
     const_reference back() const
     {
-        *return end_->previous;
+        return tail_->previous->next.front()->value;
     }
 
     reference back()
     {
-        *return end_->previous;
+        return tail_->previous->next.front()->value;
     }
 
     void swap(Skiplist& other)
@@ -280,7 +285,7 @@ public:
         swap(allocator_, other.allocator_);
         swap(size_, other.size_);
         swap(compare_, other.compare_);
-        first_.swap(other.first_);
+        head_->swap(other.head_);
     }
 
     Skiplist& operator=(const Skiplist& other)
@@ -298,7 +303,7 @@ public:
     {
         iterator result(this);
 
-        Node* currentNode = &first_;
+        Node* currentNode = head_;
         typename ElementPtrVector::difference_type i =
             static_cast<ElementPtrVector::difference_type>
                 (currentNode->next.size() - 1);
@@ -320,19 +325,19 @@ public:
             // The key already exists: update the value
             Element* node = currentNode->next.front();
             node->value.second = value.second;
-            result.node = node;
+            result.node = node->previous;
         }
         else {
             typedef typename ElementPtrVector::size_type next_size_type;
             next_size_type level = next_level();
 
-            if (level > first_.next.size()) {
+            if (level > head_->next.size()) {
                 // Adjust the number of nodes in the header
-                for (next_size_type i = first_.next.size(); i != level; ++i)
-                    update[i] = &first_;
+                for (next_size_type i = head_->next.size(); i != level; ++i)
+                    update[i] = head_;
 
-                next_size_type count = level - first_.next.size();
-                first_.next.insert(first_.next.end(), count, NULL);
+                next_size_type count = level - head_->next.size();
+                head_->next.insert(head_->next.end(), count, NULL);
             }
 
             Element* node = xconstruct(Element(value));
@@ -345,19 +350,21 @@ public:
                 update[i]->next[i] = node;
             }
 
+            assert(!node->next.empty());
+
             if (node->next.front()) {
                 // Let the successor of the new node point to it
                 node->next.front()->previous = node;
             }
 
-            if (end_.previous == &first_ ||
+            if (tail_ == head_ ||
                 compare_(static_cast<const Element*>
-                    (end_.previous)->value.first, node->value.first)) {
+                    (tail_)->value.first, node->value.first)) {
                 // Ensure that the last node doesn't have any successors
                 assert(std::count_if(node->next.begin(), node->next.end(),
                     std::not1(std::bind2nd(std::equal_to<Element*>(),
                         static_cast<Element*>(NULL)))) == 0);
-                end_.previous = node;
+                tail_ = node;
             }
 
             node->previous = update.front();
@@ -365,7 +372,7 @@ public:
 
             ++size_;
 
-            result.node = node;
+            result.node = node->previous;
         }
 
         return result;
@@ -380,9 +387,7 @@ public:
 
     void erase(iterator where)
     {
-        assert(where != end() && "Invalid iterator");
-
-        Node* const node = const_cast<Node*>(where.node);
+        Node* const node = where.node->next.front();
         Node* currentNode = node->previous;
 
         typedef typename ElementPtrVector::size_type next_size_type;
@@ -403,10 +408,12 @@ public:
         // Let the predecessors point to successors of the node being deleted
         Node* const previous = update.front();
 
+        assert(!node->next.empty());
+
         if (node->next.front())
             node->next.front()->previous = previous;
 
-        for (next_size_type i = 0; i != first_.next.size() && !stop; ++i) {
+        for (next_size_type i = 0; i != head_->next.size() && !stop; ++i) {
             if (!update[i] || update[i]->next[i] != node)
                 stop = true;
             else {
@@ -415,39 +422,39 @@ public:
             }
         }
 
-        if (node == end_.previous) {
+        if (node == tail_) {
             // Ensure that the last node doesn't have any successors
             assert(std::count_if(previous->next.begin(), previous->next.end(),
                 std::not1(std::bind2nd(std::equal_to<Element*>(),
                 static_cast<Element*>(NULL)))) == 0);
-            end_.previous = previous;
+            tail_ = previous;
         }
 
         xdestroy(static_cast<Element*>(node));
 
         // Remove all trailing non-null element pointers
         ElementPtrVector::reverse_iterator it =
-            std::find_if(first_.next.rbegin(), first_.next.rend(),
+            std::find_if(head_->next.rbegin(), head_->next.rend(),
                 std::not1(std::bind2nd(std::equal_to<Element*>(),
                     static_cast<Element*>(NULL))));
-        first_.next.erase(it.base(), first_.next.end());
+        head_->next.erase(it.base(), head_->next.end());
 
         --size_;
     }
 
     iterator find(const key_type& key)
     {
-        Node* node = xfind(&first_, key, this);
+        Node* node = xfind(head_, key, this);
 
         if (!node)
-            node = &end_;
+            node = tail_;
 
         return iterator(this, node);
     }
 
     const_iterator find(const_reference value) const
     {
-        const Node* x = xfind(&first_, key, this);
+        const Node* x = xfind(&head_, key, this);
         return const_iterator();
     }
 
@@ -505,13 +512,16 @@ private:
         value_type value;
     };
 
+    typedef typename Allocator::template rebind<Node>::other NodeAllocator;
     typedef typename Allocator::template rebind<Element>::other
-        element_allocator;
+        ElementAllocator;
 
     void xinit()
     {
         size_ = 0;
-        end_.previous = &first_;
+        head_ = nallocator_.allocate(1);
+        nallocator_.construct(head_, Node());
+        tail_ = head_;
     }
 
     size_type next_level()
@@ -575,9 +585,10 @@ private:
     allocator_type allocator_;
     size_type size_;
     key_compare compare_;
-    element_allocator eallocator_;
-    Node first_;
-    Node end_;
+    NodeAllocator nallocator_;
+    ElementAllocator eallocator_;
+    Node* head_;
+    Node* tail_;
 };
 
 template<class Key, class T, class Engine, class Compare, class Allocator>
@@ -601,8 +612,8 @@ template<class Key, class T, class Engine, class Compare, class Allocator>
 inline typename Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator&
 Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator::operator++()
 {
-    if (node->next.front() == list->end_.previous)
-        node = &list->end_;
+    if (node->next.front() == list->tail_)
+        node = list->tail_;
     else
         node = node->next.front();
 
@@ -624,10 +635,12 @@ inline typename Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator&
     Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator::operator--()
 {
     assert(node->previous);
-    node = node->previous->previous;
+    node = node->previous;
 
     if (!node)
-        node = &list->end_;
+        node = list->tail_;
+
+    const Element* e = static_cast<const Element*>(node);
 
     return *this;
 }
