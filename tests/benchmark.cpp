@@ -30,7 +30,7 @@
 
 #include "skiplist.hpp"
 
-void test_skiplist(const std::size_t count, boost::random::mt19937& gen)
+void test_skiplist(std::size_t count, boost::random::mt19937& gen)
 {
     Skiplist<int, int> s;
     boost::random::uniform_int_distribution<> d;
@@ -56,7 +56,7 @@ void test_skiplist(const std::size_t count, boost::random::mt19937& gen)
     std::cout << "done. elapsed time: " << elapsed << "s\n";
 }
 
-void test_map(const std::size_t count, boost::random::mt19937& gen)
+void test_map(std::size_t count, boost::random::mt19937& gen)
 {
     std::map<int, int> s;
     boost::random::uniform_int_distribution<> d;

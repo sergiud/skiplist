@@ -827,10 +827,6 @@ private:
         )
     {
         Element* node = eallocator_.allocate(1);
-
-        if (!node)
-            throw std::length_error("invalid skip list length");
-
         eallocator_.construct(node,
 #ifdef HAVE_CPP0X
             std::forward<Element>(value)
