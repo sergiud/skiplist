@@ -35,7 +35,9 @@
 #include <cstddef>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <memory>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -249,8 +251,10 @@ public:
         xinit();
     }
 
-    explicit Skiplist(const Compare& predicate, const Distribution& distribution,
-        const Engine& engine = Engine(), const Allocator& allocator = Allocator())
+    explicit Skiplist(const Distribution& distribution,
+            const Engine& engine = Engine(),
+            const Compare& predicate = Compare(),
+            const Allocator& allocator = Allocator())
         : engine_(engine)
         , allocator_(allocator)
         , nallocator_(allocator)
@@ -268,6 +272,7 @@ public:
         , eallocator_(other.eallocator_)
         , compare_(other.compare_)
         , distribution_(other.distribution_)
+        , max_level_(other.max_level_)
     {
         xinit();
         insert(other.cbegin(), other.cend());
@@ -297,12 +302,15 @@ public:
         , tail_(other.tail_)
         , end_(other.end_)
         , distribution_(std::move(other.distribution_))
+        , update_(std::move(other.max_level_))
+        , max_level_(other.max_level_)
     {
         other.size_ = 0;
         other.block_ = NULL;
         other.head_ = NULL;
         other.tail_ = NULL;
         other.end_ = NULL;
+        other.max_level_ = 0;
     }
 
     Skiplist& operator=(Skiplist&& other)
@@ -340,7 +348,7 @@ public:
 
     size_type max_level() const
     {
-        return 32;
+        return max_level_;
     }
 
     void clear()
@@ -682,6 +690,8 @@ private:
         nallocator_.construct(head_, Node());
         nallocator_.construct(end_, Node());
         end_->previous = tail_ = head_;
+        max_level_ = static_cast<size_type>(std::log((distribution_.p()) *
+            std::numeric_limits<size_type>::max()) / std::log(2.0) + 1.5);
     }
 
     void xclear()
@@ -712,12 +722,16 @@ private:
         nallocator_.destroy(end_);
         nallocator_.deallocate(block_, 2);
         block_ = head_ = tail_ = end_ = NULL;
+        update_.clear();
+        max_level_ = 0;
     }
 
     size_type next_level()
     {
         size_type result = distribution_(engine_) + 1;
-        assert(result < max_level());
+
+        if (result >= max_level_)
+            max_level_ = result;
 
         return result;
     }
@@ -827,8 +841,12 @@ private:
 #endif
         )
     {
-        Element* e = eallocator_.allocate(1);
-        eallocator_.construct(e,
+        Element* node = eallocator_.allocate(1);
+
+        if (!node)
+            throw std::length_error("invalid skip list length");
+
+        eallocator_.construct(node,
 #ifdef HAVE_CPP0X
             std::forward<Element>(value)
 #else // !HAVE_CPP0X
@@ -836,7 +854,7 @@ private:
 #endif // HAVE_CPP0X
         );
 
-        return e;
+        return node;
     }
 
     void xdestroy(Element* e)
@@ -857,6 +875,7 @@ private:
     Node* end_;
     distribution_type distribution_;
     NodePtrVector update_;
+    size_type max_level_;
 };
 
 template<class Key, class T, class Distribution, class Engine, class Compare,
