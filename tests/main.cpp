@@ -229,6 +229,7 @@ BOOST_AUTO_TEST_CASE(move)
     Skiplist<int, int, boost::random::mt19937> s1(std::move(s));
 
     BOOST_CHECK(s.empty());
+    BOOST_CHECK(boost::distance(s) == 0);
     BOOST_CHECK_EQUAL(s1.size(), 9);
 
     Skiplist<int, int, boost::random::mt19937> s2;
@@ -236,6 +237,7 @@ BOOST_AUTO_TEST_CASE(move)
     s2 = std::move(s1);
 
     BOOST_CHECK(s1.empty());
+    BOOST_CHECK(boost::distance(s1) == 0);
     BOOST_CHECK_EQUAL(s2.size(), 9);
 }
 
