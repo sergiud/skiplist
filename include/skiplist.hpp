@@ -61,7 +61,7 @@
  *
  * @blockquote
  * Pugh, William (June 1990). "Skip Lists: A Probabilistic Alternative to
- * Balanced Trees". Communications of the ACM 33 (6): 668–676
+ * Balanced Trees". Communications of the ACM 33 (6): 668-676
  * @endblockquote
  *
  * This specific implementation supports bidirectional iteration through the
