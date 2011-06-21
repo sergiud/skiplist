@@ -42,15 +42,17 @@ void test_skiplist(const std::size_t count, boost::random::mt19937& gen)
     for (std::size_t i = 0; i != count; ++i)
         s.insert(std::make_pair(d(gen), 1));
 
-    double elapsed = (std::clock() - start) / CLOCKS_PER_SEC;
+    double elapsed = double(std::clock() - start) / CLOCKS_PER_SEC;
     std::cout << "done. elapsed time: " << elapsed << "s\n";
+
+    std::cout << "testing skip list element presence...\n";
 
     start = std::clock();
 
-    std::cout << "testing skip list element presence...\n";
-    s.count(150);
+    for (std::size_t i = 0; i != count; ++i)
+        s.count(d(gen));
 
-    elapsed = (std::clock() - start) / CLOCKS_PER_SEC;
+    elapsed = double(std::clock() - start) / CLOCKS_PER_SEC;
     std::cout << "done. elapsed time: " << elapsed << "s\n";
 }
 
@@ -66,15 +68,17 @@ void test_map(const std::size_t count, boost::random::mt19937& gen)
     for (std::size_t i = 0; i != count; ++i)
         s.insert(std::make_pair(d(gen), 1));
 
-    double elapsed = (std::clock() - start) / CLOCKS_PER_SEC;
+    double elapsed = double(std::clock() - start) / CLOCKS_PER_SEC;
     std::cout << "done. elapsed time: " << elapsed << "s\n";
+
+    std::cout << "testing map element presence...\n";
 
     start = std::clock();
 
-    std::cout << "testing map element presence...\n";
-    s.count(150);
+    for (std::size_t i = 0; i != count; ++i)
+        s.count(d(gen));
 
-    elapsed = (std::clock() - start) / CLOCKS_PER_SEC;
+    elapsed = double(std::clock() - start) / CLOCKS_PER_SEC;
     std::cout << "done. elapsed time: " << elapsed << "s\n";
 }
 
