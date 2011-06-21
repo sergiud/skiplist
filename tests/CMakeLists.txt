@@ -22,7 +22,8 @@ endif (MSVC)
 
 add_definitions (${skiplist_DEFINITIONS})
 
-add_executable (test_skiplist main.cpp)
+add_executable (test_skiplist unittest.cpp)
+add_executable (test_benchmark benchmark.cpp)
 
 target_link_libraries (test_skiplist ${Boost_LIBRARIES} ${skiplist_LIBRARIES}
   ${skiplist_LIBRARY})

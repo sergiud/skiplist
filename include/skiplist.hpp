@@ -520,20 +520,22 @@ public:
         typedef typename ElementPtrVector::size_type next_size_type;
 
         next_size_type count = node->next.size();
-        NodePtrVector update(max_level());
+
+        if (update_.size() != max_level())
+            update_.resize(max_level());
 
         // Collect node's predecessors
         for (next_size_type i = 0; i != count; ++i) {
             while (currentNode->next.size() <= i)
                 currentNode = currentNode->previous;
 
-            update[i] = currentNode;
+            update_[i] = currentNode;
         }
 
         bool stop = false;
 
         // Let the predecessors point to successors of the node being deleted
-        Node* const previous = update.front();
+        Node* const previous = update_.front();
 
         assert(!node->next.empty());
 
@@ -541,11 +543,11 @@ public:
             nextNode->previous = previous;
 
         for (next_size_type i = 0; i != head_->next.size() && !stop; ++i) {
-            if (!update[i] || update[i]->next[i] != node)
+            if (!update_[i] || update_[i]->next[i] != node)
                 stop = true;
             else {
                 Element* succesor = node->next[i];
-                update[i]->next[i] = succesor;
+                update_[i]->next[i] = succesor;
             }
         }
 
@@ -571,6 +573,11 @@ public:
         --size_;
 
         return result;
+    }
+
+    size_type count(const key_type& key) const
+    {
+        return find(key) != end() ? 1 : 0;
     }
 
     iterator find(const key_type& key)
@@ -601,9 +608,9 @@ public:
         return result;
     }
 
-    const_iterator find(const_reference value) const
+    const_iterator find(const key_type& key) const
     {
-        return const_cast<Skiplist*>(this)->find(value);
+        return const_cast<Skiplist*>(this)->find(key);
     }
 
 private:
@@ -709,7 +716,10 @@ private:
 
     size_type next_level()
     {
-        return distribution_(engine_) + 1;
+        size_type result = distribution_(engine_) + 1;
+        assert(result < max_level());
+
+        return result;
     }
 
     bool xequal(const key_type& lhs, const key_type& rhs) const
@@ -720,6 +730,9 @@ private:
     template<class V>
     iterator xinsert(const_iterator where, V value)
     {
+        if (update_.size() != max_level())
+            update_.resize(max_level());
+
         assert(where.parent == this && "Invalid iterator");
 
         iterator result(this);
@@ -729,14 +742,12 @@ private:
             static_cast<ElementPtrVector::difference_type>
                 (currentNode->next.size() - 1);
 
-        NodePtrVector update(max_level());
-
         for ( ; i >= 0; --i) {
             while (currentNode->next[i] &&
                 compare_(currentNode->next[i]->value.first, value.first))
                 currentNode = currentNode->next[i];
 
-            update[i] = currentNode;
+            update_[i] = currentNode;
         }
 
         assert(currentNode);
@@ -757,7 +768,7 @@ private:
             if (level > head_->next.size()) {
                 // Adjust the number of nodes in the header
                 for (next_size_type i = head_->next.size(); i != level; ++i)
-                    update[i] = head_;
+                    update_[i] = head_;
 
                 next_size_type count = level - head_->next.size();
                 head_->next.insert(head_->next.end(), count, NULL);
@@ -775,9 +786,9 @@ private:
 
             // Perform the actual insertion
             for (next_size_type i = 0; i != level; ++i) {
-                Element* successor = update[i]->next[i];
+                Element* successor = update_[i]->next[i];
                 node->next.push_back(successor);
-                update[i]->next[i] = node;
+                update_[i]->next[i] = node;
             }
 
             assert(!node->next.empty());
@@ -797,7 +808,7 @@ private:
                 end_->previous = tail_ = node;
             }
 
-            node->previous = update.front();
+            node->previous = update_.front();
             assert(node->previous->next.front() == node);
 
             ++size_;
@@ -845,6 +856,7 @@ private:
     Node* tail_;
     Node* end_;
     distribution_type distribution_;
+    NodePtrVector update_;
 };
 
 template<class Key, class T, class Distribution, class Engine, class Compare,
