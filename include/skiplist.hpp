@@ -31,11 +31,9 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cmath>
 #include <cstddef>
 #include <functional>
 #include <iterator>
-#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <utility>
@@ -272,7 +270,6 @@ public:
         , eallocator_(other.eallocator_)
         , compare_(other.compare_)
         , distribution_(other.distribution_)
-        , max_level_(other.max_level_)
     {
         xinit();
         insert(other.cbegin(), other.cend());
@@ -302,15 +299,13 @@ public:
         , tail_(other.tail_)
         , end_(other.end_)
         , distribution_(std::move(other.distribution_))
-        , update_(std::move(other.max_level_))
-        , max_level_(other.max_level_)
+        , update_(std::move(other.update_))
     {
         other.size_ = 0;
         other.block_ = NULL;
         other.head_ = NULL;
         other.tail_ = NULL;
         other.end_ = NULL;
-        other.max_level_ = 0;
     }
 
     Skiplist& operator=(Skiplist&& other)
@@ -344,11 +339,6 @@ public:
     size_type max_size() const
     {
         return eallocator_.max_size();
-    }
-
-    size_type max_level() const
-    {
-        return max_level_;
     }
 
     void clear()
@@ -529,8 +519,8 @@ public:
 
         next_size_type count = node->next.size();
 
-        if (update_.size() != max_level())
-            update_.resize(max_level());
+        if (update_.size() < count)
+            update_.resize(count);
 
         // Collect node's predecessors
         for (next_size_type i = 0; i != count; ++i) {
@@ -690,8 +680,6 @@ private:
         nallocator_.construct(head_, Node());
         nallocator_.construct(end_, Node());
         end_->previous = tail_ = head_;
-        max_level_ = static_cast<size_type>(std::log((distribution_.p()) *
-            std::numeric_limits<size_type>::max()) / std::log(2.0) + 1.5);
     }
 
     void xclear()
@@ -723,17 +711,11 @@ private:
         nallocator_.deallocate(block_, 2);
         block_ = head_ = tail_ = end_ = NULL;
         update_.clear();
-        max_level_ = 0;
     }
 
     size_type next_level()
     {
-        size_type result = distribution_(engine_) + 1;
-
-        if (result >= max_level_)
-            max_level_ = result;
-
-        return result;
+        return distribution_(engine_) + 1;
     }
 
     bool xequal(const key_type& lhs, const key_type& rhs) const
@@ -744,9 +726,6 @@ private:
     template<class V>
     iterator xinsert(const_iterator where, V value)
     {
-        if (update_.size() != max_level())
-            update_.resize(max_level());
-
         assert(where.parent == this && "Invalid iterator");
 
         iterator result(this);
@@ -755,6 +734,9 @@ private:
         typename ElementPtrVector::difference_type i =
             static_cast<ElementPtrVector::difference_type>
                 (currentNode->next.size() - 1);
+
+        if (update_.size() < head_->next.size())
+            update_.resize(head_->next.size());
 
         for ( ; i >= 0; --i) {
             while (currentNode->next[i] &&
@@ -780,6 +762,8 @@ private:
             assert(level > 0);
 
             if (level > head_->next.size()) {
+                update_.resize(level);
+
                 // Adjust the number of nodes in the header
                 for (next_size_type i = head_->next.size(); i != level; ++i)
                     update_[i] = head_;
@@ -875,7 +859,6 @@ private:
     Node* end_;
     distribution_type distribution_;
     NodePtrVector update_;
-    size_type max_level_;
 };
 
 template<class Key, class T, class Distribution, class Engine, class Compare,
