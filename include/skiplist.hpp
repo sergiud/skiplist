@@ -586,10 +586,12 @@ public:
             static_cast<ElementPtrVector::difference_type>
                 (node->next.size() - 1);
 
+        Element* nextNode;
+
         for ( ; level >= 0; --level) {
-            while (node->next[level] &&
-                compare_(node->next[level]->value.first, key))
-                node = node->next[level];
+            while ((nextNode = node->next[level]) &&
+                    compare_(nextNode->value.first, key))
+                node = nextNode;
         }
 
         assert(node);
