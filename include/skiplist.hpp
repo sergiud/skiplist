@@ -796,9 +796,9 @@ private:
                 succesor->previous = node;
             }
 
-            if (tail_ == head_ ||
-                compare_(static_cast<const Element*>
-                    (tail_)->value.first, node->value.first)) {
+            node->previous = update_.front();
+
+            if (tail_ == head_ || node->previous == tail_) {
                 // Ensure that the last node doesn't have any successors
                 assert(std::count_if(node->next.begin(), node->next.end(),
                     std::not1(std::bind2nd(std::equal_to<Element*>(),
@@ -806,7 +806,6 @@ private:
                 end_->previous = tail_ = node;
             }
 
-            node->previous = update_.front();
             assert(node->previous->next.front() == node);
 
             ++size_;
