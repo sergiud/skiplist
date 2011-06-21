@@ -25,6 +25,7 @@
 #include <vector>
 
 #include <boost/random/mersenne_twister.hpp>
+#include <boost/random/negative_binomial_distribution.hpp>
 #include <boost/range/algorithm.hpp>
 #include <boost/test/unit_test.hpp>
 
@@ -34,9 +35,11 @@
 
 #include "skiplist.hpp"
 
+typedef Skiplist<int, int> IntSkipList;
+
 BOOST_AUTO_TEST_CASE(sorting)
 {
-    Skiplist<int, int, boost::random::mt19937> s;
+    IntSkipList s;
 
     s.insert(std::make_pair(1, 1));
     s.insert(std::make_pair(10, 2));
@@ -63,7 +66,7 @@ BOOST_AUTO_TEST_CASE(sorting)
 
 BOOST_AUTO_TEST_CASE(insertion)
 {
-    Skiplist<int, int, boost::random::mt19937> s;
+    IntSkipList s;
 
     BOOST_CHECK(s.empty());
 
@@ -95,12 +98,12 @@ BOOST_AUTO_TEST_CASE(insertion)
     BOOST_CHECK_EQUAL(s.front().first, -1);
     BOOST_CHECK_EQUAL(s.back().first, 20);
 
-    Skiplist<int, int, boost::random::mt19937> s1;
+    IntSkipList s1;
     s1.insert(std::make_pair(1, 1));
 
     BOOST_CHECK(s1.erase(s1.insert(std::make_pair(2, 1))) == s1.end());
 
-    Skiplist<int, int, boost::random::mt19937>::iterator it2 =
+    IntSkipList::iterator it2 =
         s1.insert(std::make_pair(2, 1));
 
     BOOST_CHECK(s1.erase(s1.find(1)) == it2);
@@ -112,7 +115,7 @@ BOOST_AUTO_TEST_CASE(insertion)
 
 BOOST_AUTO_TEST_CASE(deletion)
 {
-    Skiplist<int, int, boost::random::mt19937> s;
+    IntSkipList s;
     s.erase(s.insert(std::make_pair(1, 1)));
 
     BOOST_CHECK(s.empty());
@@ -148,7 +151,7 @@ BOOST_AUTO_TEST_CASE(deletion)
 
 BOOST_AUTO_TEST_CASE(duplicates)
 {
-    Skiplist<int, int, boost::random::mt19937> s;
+    IntSkipList s;
 
     s.insert(std::make_pair(1, 1));
     s.erase(s.find(1));
@@ -159,7 +162,7 @@ BOOST_AUTO_TEST_CASE(duplicates)
 
 BOOST_AUTO_TEST_CASE(iterators)
 {
-    Skiplist<int, int, boost::random::mt19937> s;
+    IntSkipList s;
     BOOST_CHECK_EQUAL(boost::distance(s), 0);
 
     s.insert(std::make_pair(10, 2));
@@ -178,7 +181,7 @@ BOOST_AUTO_TEST_CASE(iterators)
 
 BOOST_AUTO_TEST_CASE(copy)
 {
-    Skiplist<int, int, boost::random::mt19937> s;
+    IntSkipList s;
     BOOST_CHECK_EQUAL(boost::distance(s), 0);
 
     s.insert(std::make_pair(10, 2));
@@ -190,7 +193,7 @@ BOOST_AUTO_TEST_CASE(copy)
     s.insert(std::make_pair(20, 1));
     s.insert(std::make_pair(-1, 1));
 
-    Skiplist<int, int, boost::random::mt19937> s1 = s;
+    IntSkipList s1 = s;
 
     BOOST_CHECK_EQUAL(s.size(), 8);
     BOOST_CHECK_EQUAL(s1.size(), 8);
@@ -204,7 +207,7 @@ BOOST_AUTO_TEST_CASE(copy)
 
 BOOST_AUTO_TEST_CASE(swap)
 {
-    Skiplist<int, int, boost::random::mt19937> s;
+    IntSkipList s;
     BOOST_CHECK_EQUAL(boost::distance(s), 0);
 
     s.insert(std::make_pair(10, 2));
@@ -216,7 +219,7 @@ BOOST_AUTO_TEST_CASE(swap)
     s.insert(std::make_pair(20, 1));
     s.insert(std::make_pair(-1, 1));
 
-    Skiplist<int, int, boost::random::mt19937> s1 = s;
+    IntSkipList s1 = s;
 
     s1.swap(s);
 
@@ -232,7 +235,7 @@ BOOST_AUTO_TEST_CASE(swap)
 
 BOOST_AUTO_TEST_CASE(comparison)
 {
-    Skiplist<int, int, boost::random::mt19937> s;
+    IntSkipList s;
 
     s.insert(std::make_pair(1, 1));
     s.insert(std::make_pair(10, 2));
@@ -244,7 +247,7 @@ BOOST_AUTO_TEST_CASE(comparison)
     s.insert(std::make_pair(20, 1));
     s.insert(std::make_pair(-1, 1));
 
-    Skiplist<int, int, boost::random::mt19937> s1 = s;
+    IntSkipList s1 = s;
 
     BOOST_CHECK(s == s1);
 }
@@ -253,7 +256,7 @@ BOOST_AUTO_TEST_CASE(comparison)
 
 BOOST_AUTO_TEST_CASE(move)
 {
-    Skiplist<int, int, boost::random::mt19937> s;
+    IntSkipList s;
 
     s.insert(std::make_pair(1, 1));
     s.insert(std::make_pair(10, 2));
@@ -265,13 +268,13 @@ BOOST_AUTO_TEST_CASE(move)
     s.insert(std::make_pair(20, 1));
     s.insert(std::make_pair(-1, 1));
 
-    Skiplist<int, int, boost::random::mt19937> s1(std::move(s));
+    IntSkipList s1(std::move(s));
 
     BOOST_CHECK(s.empty());
     BOOST_CHECK(boost::distance(s) == 0);
     BOOST_CHECK_EQUAL(s1.size(), 9);
 
-    Skiplist<int, int, boost::random::mt19937> s2;
+    IntSkipList s2;
 
     s2 = std::move(s1);
 

@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstddef>
 #include <functional>
 #include <iterator>
 #include <memory>
@@ -43,11 +44,14 @@
 #endif // !defined(HAVE_CPP0X) && _MSC_VER >= 1600
 
 #ifdef HAVE_CPP0X
-
 #include <initializer_list>
 #include <random>
-
 #endif // HAVE_CPP0X
+
+#ifdef HAVE_BOOST
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/negative_binomial_distribution.hpp>
+#endif // HAVE_BOOST
 
 /**
  * @brief Skip list implementation.
@@ -65,11 +69,22 @@
  */
 template
 <
-    class Key,
-    class T,
-    class Engine,
-    class Compare = std::less<Key>,
-    class Allocator = std::allocator<std::pair<const Key, T> >
+      class Key
+    , class T
+    , class Distribution
+#ifdef HAVE_CPP0X
+        = std::negative_binomial_distribution<std::size_t>
+#elif defined(HAVE_BOOST)
+        = boost::random::negative_binomial_distribution<std::size_t>
+#endif // HAVE_CPP0X
+    , class Engine
+#ifdef HAVE_CPP0X
+        = std::default_random_engine
+#elif defined(HAVE_BOOST)
+        = boost::random::mt19937
+#endif // HAVE_CPP0X
+    , class Compare = std::less<Key>
+    , class Allocator = std::allocator<std::pair<const Key, T> >
 >
 class Skiplist
 {
@@ -81,6 +96,7 @@ public:
     typedef Key key_type;
     typedef T mapped_type;
     typedef Allocator allocator_type;
+    typedef Distribution distribution_type;
     typedef typename allocator_type::value_type value_type;
     typedef typename allocator_type::reference reference;
     typedef typename allocator_type::pointer pointer;
@@ -233,13 +249,14 @@ public:
         xinit();
     }
 
-    explicit Skiplist(const Compare& predicate, const Engine& engine = Engine(),
-        const Allocator& allocator = Allocator())
+    explicit Skiplist(const Compare& predicate, const Distribution& distribution,
+        const Engine& engine = Engine(), const Allocator& allocator = Allocator())
         : engine_(engine)
         , allocator_(allocator)
         , nallocator_(allocator)
         , eallocator_(allocator)
         , compare_(predicate)
+        , distribution_(distribution)
     {
         xinit();
     }
@@ -250,6 +267,7 @@ public:
         , allocator_(other.allocator_)
         , eallocator_(other.eallocator_)
         , compare_(other.compare_)
+        , distribution_(other.distribution_)
     {
         xinit();
         insert(other.cbegin(), other.cend());
@@ -278,6 +296,7 @@ public:
         , head_(other.head_)
         , tail_(other.tail_)
         , end_(other.end_)
+        , distribution_(std::move(other.distribution_))
     {
         other.size_ = 0;
         other.block_ = NULL;
@@ -421,6 +440,12 @@ public:
         swap(head_, other.head_);
         swap(tail_, other.tail_);
         swap(end_, other.end_);
+        swap(distribution_, other.distribution_);
+    }
+
+    distribution_type get_distribution() const
+    {
+        return distribution_;
     }
 
     allocator_type get_allocator() const
@@ -684,15 +709,7 @@ private:
 
     size_type next_level()
     {
-        const double p = 0.5;
-        const double max = static_cast<double>(engine_.max() - engine_.min());
-
-        size_type level = 1;
-
-        while (level < max_level() && engine_() / max < p)
-            ++level;
-
-        return level;
+        return distribution_(engine_) + 1;
     }
 
     bool xequal(const key_type& lhs, const key_type& rhs) const
@@ -733,7 +750,9 @@ private:
         }
         else {
             typedef typename ElementPtrVector::size_type next_size_type;
+
             next_size_type level = next_level();
+            assert(level > 0);
 
             if (level > head_->next.size()) {
                 // Adjust the number of nodes in the header
@@ -825,11 +844,14 @@ private:
     Node* head_;
     Node* tail_;
     Node* end_;
+    distribution_type distribution_;
 };
 
-template<class Key, class T, class Engine, class Compare, class Allocator>
-inline typename Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator&
-Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator::operator++()
+template<class Key, class T, class Distribution, class Engine, class Compare,
+    class Allocator>
+inline typename Skiplist<Key, T, Distribution, Engine, Compare,
+       Allocator>::const_iterator& Skiplist<Key, T, Distribution, Engine,
+       Compare, Allocator>::const_iterator::operator++()
 {
     assert(node != parent->end_ && "Iterator passed behind the end");
     assert(node && "Iterator is not dereferencable");
@@ -842,9 +864,11 @@ Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator::operator++()
     return *this;
 }
 
-template<class Key, class T, class Engine, class Compare, class Allocator>
-inline typename Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator&
-    Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator::operator--()
+template<class Key, class T, class Distribution, class Engine, class Compare,
+class Allocator>
+inline typename Skiplist<Key, T, Distribution, Engine, Compare,
+       Allocator>::const_iterator& Skiplist<Key, T, Distribution, Engine,
+       Compare, Allocator>::const_iterator::operator--()
 {
     assert(node != parent->head_ && "Iterator passed behind the start");
     assert(node && "Iterator is not dereferencable");
@@ -857,9 +881,11 @@ inline typename Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator&
     return *this;
 }
 
-template<class Key, class T, class Engine, class Compare, class Allocator>
-inline typename Skiplist<Key, T, Engine, Compare, Allocator>::const_reference
-Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator::operator*()
+template<class Key, class T, class Distribution, class Engine, class Compare,
+    class Allocator>
+inline typename Skiplist<Key, T, Distribution, Engine, Compare,
+       Allocator>::const_reference Skiplist<Key, T, Distribution, Engine,
+       Compare, Allocator>::const_iterator::operator*()
 {
     assert(node && "Iterator is not dereferencable");
     assert(!node->next.empty() && "Invalid iterator");
@@ -867,9 +893,11 @@ Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator::operator*()
     return node->next.front()->value;
 }
 
-template<class Key, class T, class Engine, class Compare, class Allocator>
-inline typename Skiplist<Key, T, Engine, Compare, Allocator>::const_pointer
-    Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator::operator->()
+template<class Key, class T, class Distribution, class Engine, class Compare,
+    class Allocator>
+inline typename Skiplist<Key, T, Distribution, Engine, Compare,
+       Allocator>::const_pointer Skiplist<Key, T, Distribution, Engine, Compare,
+       Allocator>::const_iterator::operator->()
 {
     assert(node && "Iterator is not dereferencable");
     assert(!node->next.empty() && "Invalid iterator");
@@ -878,50 +906,62 @@ inline typename Skiplist<Key, T, Engine, Compare, Allocator>::const_pointer
 }
 
 // Returns x == y
-template<class Key, class T, class Engine, class Compare, class Allocator>
-inline bool operator==(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
-    const Skiplist<Key, T, Engine, Compare, Allocator>& rhs)
+template<class Key, class T, class Distribution, class Engine, class Compare,
+    class Allocator>
+inline bool operator==(const Skiplist<Key, T, Distribution, Engine, Compare,
+        Allocator>& lhs, const Skiplist<Key, T, Distribution, Engine, Compare,
+        Allocator>& rhs)
 {
     return lhs.size() == rhs.size() &&
         std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
 // Returns !(x == y)
-template<class Key, class T, class Engine, class Compare, class Allocator>
-inline bool operator!=(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
-    const Skiplist<Key, T, Engine, Compare, Allocator>& rhs)
+template<class Key, class T, class Distribution, class Engine, class Compare,
+    class Allocator>
+inline bool operator!=(const Skiplist<Key, T, Distribution, Engine, Compare,
+        Allocator>& lhs, const Skiplist<Key, T, Distribution, Engine, Compare,
+        Allocator>& rhs)
 {
     return !(lhs == rhs);
 }
 
-template<class Key, class T, class Engine, class Compare, class Allocator>
-inline bool operator<(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
-    const Skiplist<Key, T, Engine, Compare, Allocator>& rhs)
+template<class Key, class T, class Distribution, class Engine, class Compare,
+    class Allocator>
+inline bool operator<(const Skiplist<Key, T, Distribution, Engine, Compare,
+        Allocator>& lhs, const Skiplist<Key, T, Distribution, Engine, Compare,
+        Allocator>& rhs)
 {
     return std::lexicographical_compare(lhs.begin(), lhs.end(),
         rhs.begin(), rhs.end());
 }
 
 // // Returns !(x > y)
-template<class Key, class T, class Engine, class Compare, class Allocator>
-inline bool operator<=(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
-    const Skiplist<Key, T, Engine, Compare, Allocator>& rhs)
+template<class Key, class T, class Distribution, class Engine, class Compare,
+    class Allocator>
+inline bool operator<=(const Skiplist<Key, T, Distribution, Engine, Compare,
+        Allocator>& lhs, const Skiplist<Key, T, Distribution, Engine, Compare,
+        Allocator>& rhs)
 {
     return !(lhs > rhs);
 }
 
 // Returns y < x
-template<class Key, class T, class Engine, class Compare, class Allocator>
-inline bool operator>(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
-    const Skiplist<Key, T, Engine, Compare, Allocator>& rhs)
+template<class Key, class T, class Distribution, class Engine, class Compare,
+    class Allocator>
+inline bool operator>(const Skiplist<Key, T, Distribution, Engine, Compare,
+        Allocator>& lhs, const Skiplist<Key, T, Engine, Compare, Allocator>&
+        rhs)
 {
     return rhs < lhs;
 }
 
 // Returns !(x < y)
-template<class Key, class T, class Engine, class Compare, class Allocator>
-inline bool operator>=(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
-    const Skiplist<Key, T, Engine, Compare, Allocator>& rhs)
+template<class Key, class T, class Distribution, class Engine, class Compare,
+    class Allocator>
+inline bool operator>=(const Skiplist<Key, T, Distribution, Engine, Compare,
+        Allocator>& lhs, const Skiplist<Key, T, Distribution, Engine, Compare,
+        Allocator>& rhs)
 {
     return !(lhs < rhs);
 }
@@ -930,9 +970,10 @@ namespace std {
 
 // Provide a specialization for std::swap
 
-template<class Key, class T, class Engine, class Compare, class Allocator>
-inline void swap(Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
-    Skiplist<Key, T, Engine, Compare, Allocator>& rhs)
+template<class Key, class T, class Distribution, class Engine, class Compare,
+class Allocator> inline void swap(Skiplist<Key, T, Distribution, Engine,
+        Compare, Allocator>& lhs, Skiplist<Key, T, Distribution, Engine,
+        Compare, Allocator>& rhs)
 {
     lhs.swap(rhs)
 }
