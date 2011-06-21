@@ -19,7 +19,8 @@
 // SOFTWARE.
 
 /**
- * @file
+ * @brief Skip list based data structures.
+ * @file skiplist.hpp
  * @author Sergiu Dotenco
  */
 
@@ -42,9 +43,26 @@
 #endif // !defined(HAVE_CPP0X) && _MSC_VER >= 1600
 
 #ifdef HAVE_CPP0X
+
 #include <initializer_list>
+#include <random>
+
 #endif // HAVE_CPP0X
 
+/**
+ * @brief Skip list implementation.
+ *
+ * Skip list is a data structure that can be used in place of balanced trees.
+ * The implementation is based on the paper
+ *
+ * @blockquote
+ * Pugh, William (June 1990). "Skip Lists: A Probabilistic Alternative to
+ * Balanced Trees". Communications of the ACM 33 (6): 668–676
+ * @endblockquote
+ *
+ * This specific implementation supports bidirectional iteration through the
+ * container by storing a pointer to a predecessor in each node.
+ */
 template
 <
     class Key,
@@ -91,7 +109,7 @@ public:
 
         const_iterator()
             : node(NULL)
-            , list(NULL)
+            , parent(NULL)
         {
         }
 
@@ -113,27 +131,27 @@ public:
 
         bool operator==(const const_iterator& other) const
         {
-            assert(list == other.list);
+            assert(parent == other.parent);
             return node == other.node;
         }
 
         bool operator!=(const const_iterator& other) const
         {
-            assert(list == other.list);
+            assert(parent == other.parent);
             return !(*this == other);
         }
 
     private:
         friend class Skiplist;
 
-        explicit const_iterator(const Skiplist* list, const Node* node = NULL)
-            : list(list)
+        explicit const_iterator(const Skiplist* parent, const Node* node = NULL)
+            : parent(parent)
             , node(node)
         {
         }
 
         const Node* node;
-        const Skiplist* list;
+        const Skiplist* parent;
     };
 
     class iterator
@@ -183,8 +201,8 @@ public:
     private:
         friend class Skiplist;
 
-        explicit iterator(Skiplist* list, Node* node = NULL)
-            : const_iterator(list, node)
+        explicit iterator(Skiplist* parent, Node* node = NULL)
+            : const_iterator(parent, node)
         {
         }
     };
@@ -465,6 +483,7 @@ public:
 
     iterator erase(const_iterator where)
     {
+        assert(where.parent == this && "Invalid iterator");
         assert(where != end() && "Iterator is not dereferencable");
 
         Node* const node = where.node->next.front();
@@ -506,7 +525,9 @@ public:
         }
 
         if (node == tail_) {
-            // Ensure that the last node doesn't have any successors
+            // Ensure that the last node doesn't have any successors by counting
+            // the number of null pointers. The result must correspond to the
+            // size of the next vector.
             assert(std::count_if(previous->next.begin(), previous->next.end(),
                 std::not1(std::bind2nd(std::equal_to<Element*>(),
                     static_cast<Element*>(NULL)))) == 0);
@@ -571,6 +592,7 @@ private:
     typedef std::vector<Node*,
         typename Allocator::template rebind<Node*>::other> NodePtrVector;
 
+    //! Node with successors.
     struct Node
     {
         Node()
@@ -590,6 +612,7 @@ private:
         Node* previous;
     };
 
+    //! A value node.
     struct Element
         : Node
     {
@@ -680,6 +703,8 @@ private:
     template<class V>
     iterator xinsert(const_iterator where, V value)
     {
+        assert(where.parent == this && "Invalid iterator");
+
         iterator result(this);
 
         Node* currentNode = head_;
@@ -738,9 +763,9 @@ private:
 
             assert(!node->next.empty());
 
-            if (node->next.front()) {
+            if (Element* succesor = node->next.front()) {
                 // Let the successor of the new node point to it
-                node->next.front()->previous = node;
+                succesor->previous = node;
             }
 
             if (tail_ == head_ ||
@@ -806,8 +831,11 @@ template<class Key, class T, class Engine, class Compare, class Allocator>
 inline typename Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator&
 Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator::operator++()
 {
-    if (node == list->tail_->previous)
-        node = list->end_;
+    assert(node != parent->end_ && "Iterator passed behind the end");
+    assert(node && "Iterator is not dereferencable");
+
+    if (node == parent->tail_->previous)
+        node = parent->end_;
     else
         node = node->next.front();
 
@@ -818,9 +846,10 @@ template<class Key, class T, class Engine, class Compare, class Allocator>
 inline typename Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator&
     Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator::operator--()
 {
-    assert(node);
+    assert(node != parent->head_ && "Iterator passed behind the start");
+    assert(node && "Iterator is not dereferencable");
 
-    if (node == list->end_)
+    if (node == parent->end_)
         node = node->previous->previous;
     else
         node = node->previous;
@@ -832,6 +861,9 @@ template<class Key, class T, class Engine, class Compare, class Allocator>
 inline typename Skiplist<Key, T, Engine, Compare, Allocator>::const_reference
 Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator::operator*()
 {
+    assert(node && "Iterator is not dereferencable");
+    assert(!node->next.empty() && "Invalid iterator");
+
     return node->next.front()->value;
 }
 
@@ -839,9 +871,13 @@ template<class Key, class T, class Engine, class Compare, class Allocator>
 inline typename Skiplist<Key, T, Engine, Compare, Allocator>::const_pointer
     Skiplist<Key, T, Engine, Compare, Allocator>::const_iterator::operator->()
 {
+    assert(node && "Iterator is not dereferencable");
+    assert(!node->next.empty() && "Invalid iterator");
+
     return &node->next.front()->value;
 }
 
+// Returns x == y
 template<class Key, class T, class Engine, class Compare, class Allocator>
 inline bool operator==(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
     const Skiplist<Key, T, Engine, Compare, Allocator>& rhs)
@@ -850,6 +886,7 @@ inline bool operator==(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
         std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
+// Returns !(x == y)
 template<class Key, class T, class Engine, class Compare, class Allocator>
 inline bool operator!=(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
     const Skiplist<Key, T, Engine, Compare, Allocator>& rhs)
@@ -865,6 +902,7 @@ inline bool operator<(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
         rhs.begin(), rhs.end());
 }
 
+// // Returns !(x > y)
 template<class Key, class T, class Engine, class Compare, class Allocator>
 inline bool operator<=(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
     const Skiplist<Key, T, Engine, Compare, Allocator>& rhs)
@@ -872,6 +910,7 @@ inline bool operator<=(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
     return !(lhs > rhs);
 }
 
+// Returns y < x
 template<class Key, class T, class Engine, class Compare, class Allocator>
 inline bool operator>(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
     const Skiplist<Key, T, Engine, Compare, Allocator>& rhs)
@@ -879,6 +918,7 @@ inline bool operator>(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
     return rhs < lhs;
 }
 
+// Returns !(x < y)
 template<class Key, class T, class Engine, class Compare, class Allocator>
 inline bool operator>=(const Skiplist<Key, T, Engine, Compare, Allocator>& lhs,
     const Skiplist<Key, T, Engine, Compare, Allocator>& rhs)
