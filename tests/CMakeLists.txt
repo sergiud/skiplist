@@ -1,5 +1,5 @@
 find_package (skiplist REQUIRED)
-find_package (Boost REQUIRED COMPONENTS unit_test_framework)
+find_package (Boost 1.47 REQUIRED COMPONENTS unit_test_framework)
 find_package (VLD)
 
 include_directories (${Boost_INCLUDE_DIRS})
