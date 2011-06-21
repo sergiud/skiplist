@@ -451,11 +451,11 @@ public:
         Node* currentNode = node->previous;
 
         iterator result = node == tail_ ? end() :
-            iterator(this, node->next.front());
+            iterator(this, node->previous->next.front());
 
         typedef typename ElementPtrVector::size_type next_size_type;
 
-        next_size_type count = currentNode->next.size();
+        next_size_type count = node->next.size();
         NodePtrVector update(max_level());
 
         // Collect node's predecessors
@@ -516,7 +516,8 @@ public:
                 (node->next.size() - 1);
 
         for ( ; level >= 0; --level) {
-            while (node->next[level] && compare_(node->next[level]->value.first, key))
+            while (node->next[level] &&
+                compare_(node->next[level]->value.first, key))
                 node = node->next[level];
         }
 

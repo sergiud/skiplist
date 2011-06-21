@@ -74,6 +74,20 @@ BOOST_AUTO_TEST_CASE(insertion)
     BOOST_CHECK_EQUAL(boost::distance(s), s.size());
     BOOST_CHECK_EQUAL(s.front().first, -1);
     BOOST_CHECK_EQUAL(s.back().first, 20);
+
+    Skiplist<int, int, boost::random::mt19937> s1;
+    s1.insert(std::make_pair(1, 1));
+
+    BOOST_CHECK(s1.erase(s1.insert(std::make_pair(2, 1))) == s1.end());
+
+    Skiplist<int, int, boost::random::mt19937>::iterator it2 =
+        s1.insert(std::make_pair(2, 1));
+
+    BOOST_CHECK(s1.erase(s1.find(1)) == it2);
+    BOOST_CHECK(boost::distance(s1) == 1);
+
+    BOOST_CHECK(s1.erase(s1.begin()) == s1.end());
+    BOOST_CHECK(boost::distance(s1) == 0);
 }
 
 BOOST_AUTO_TEST_CASE(deletion)
