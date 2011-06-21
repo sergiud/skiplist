@@ -210,6 +210,25 @@ BOOST_AUTO_TEST_CASE(swap)
     BOOST_CHECK_EQUAL(std::distance(s1.rbegin(), s1.rend()), s1.size());
 }
 
+BOOST_AUTO_TEST_CASE(comparison)
+{
+    Skiplist<int, int, boost::random::mt19937> s;
+
+    s.insert(std::make_pair(1, 1));
+    s.insert(std::make_pair(10, 2));
+    s.insert(std::make_pair(5, 1));
+    s.insert(std::make_pair(15, 1));
+    s.insert(std::make_pair(0, 1));
+    s.insert(std::make_pair(11, 1));
+    s.insert(std::make_pair(8, 1));
+    s.insert(std::make_pair(20, 1));
+    s.insert(std::make_pair(-1, 1));
+
+    Skiplist<int, int, boost::random::mt19937> s1 = s;
+
+    BOOST_CHECK(s == s1);
+}
+
 #ifdef HAVE_CPP0X
 
 BOOST_AUTO_TEST_CASE(move)
@@ -239,25 +258,6 @@ BOOST_AUTO_TEST_CASE(move)
     BOOST_CHECK(s1.empty());
     BOOST_CHECK(boost::distance(s1) == 0);
     BOOST_CHECK_EQUAL(s2.size(), 9);
-}
-
-BOOST_AUTO_TEST_CASE(comparison)
-{
-    Skiplist<int, int, boost::random::mt19937> s;
-
-    s.insert(std::make_pair(1, 1));
-    s.insert(std::make_pair(10, 2));
-    s.insert(std::make_pair(5, 1));
-    s.insert(std::make_pair(15, 1));
-    s.insert(std::make_pair(0, 1));
-    s.insert(std::make_pair(11, 1));
-    s.insert(std::make_pair(8, 1));
-    s.insert(std::make_pair(20, 1));
-    s.insert(std::make_pair(-1, 1));
-
-    Skiplist<int, int, boost::random::mt19937> s1 = s;
-
-    BOOST_CHECK(s == s1);
 }
 
 #endif // HAVE_CPP0X

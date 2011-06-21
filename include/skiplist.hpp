@@ -473,8 +473,8 @@ public:
 
         assert(!node->next.empty());
 
-        if (node->next.front())
-            node->next.front()->previous = previous;
+        if (Node* nextNode = node->next.front())
+            nextNode->previous = previous;
 
         for (next_size_type i = 0; i != head_->next.size() && !stop; ++i) {
             if (!update[i] || update[i]->next[i] != node)
@@ -489,7 +489,7 @@ public:
             // Ensure that the last node doesn't have any successors
             assert(std::count_if(previous->next.begin(), previous->next.end(),
                 std::not1(std::bind2nd(std::equal_to<Element*>(),
-                static_cast<Element*>(NULL)))) == 0);
+                    static_cast<Element*>(NULL)))) == 0);
             end_->previous = tail_ = previous;
         }
 
