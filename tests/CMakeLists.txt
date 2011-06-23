@@ -2,6 +2,8 @@ find_package (Boost 1.47 REQUIRED COMPONENTS unit_test_framework)
 find_package (VLD)
 find_package (skiplist REQUIRED)
 
+file (GLOB PROJECT_HPP ${skiplist_INCLUDE_DIR}/*.hpp)
+
 include_directories (${Boost_INCLUDE_DIRS})
 include_directories (${skiplist_INCLUDE_DIRS} ${skiplist_INCLUDE_DIR})
 
@@ -22,8 +24,8 @@ endif (MSVC)
 
 add_definitions (${skiplist_DEFINITIONS})
 
-add_executable (test_skiplist unittest.cpp)
-add_executable (test_benchmark benchmark.cpp)
+add_executable (test_skiplist unittest.cpp ${PROJECT_HPP})
+add_executable (test_benchmark benchmark.cpp ${PROJECT_HPP})
 
 target_link_libraries (test_skiplist ${Boost_LIBRARIES} ${skiplist_LIBRARIES}
   ${skiplist_LIBRARY})
