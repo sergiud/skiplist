@@ -619,12 +619,10 @@ public:
         }
 
         assert(node);
-        assert(!node->next.empty());
-
         iterator result;
-        Element* candidate = node->next.front();
 
-        if (candidate && xequal(KeyOfValue()(candidate->value), key))
+        if (!node->next.empty() &&
+            xequal(KeyOfValue()(node->next.front()->value), key))
             result = iterator(this, node);
         else
             result = end();
@@ -1085,6 +1083,13 @@ public:
     }
 
 #endif // HAVE_CPP0X
+
+    T& operator[](const key_type& key)
+    {
+        iterator pos = find(key);
+        return pos != end() ? pos->second :
+            insert(std::make_pair(key, T())).first->second;
+    }
 };
 
 template

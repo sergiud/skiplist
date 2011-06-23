@@ -251,6 +251,38 @@ BOOST_AUTO_TEST_CASE(comparison)
     BOOST_CHECK(s == s1);
 }
 
+BOOST_AUTO_TEST_CASE(find)
+{
+    IntSkipList s;
+
+    BOOST_CHECK(s.find(10) == s.end());
+    BOOST_CHECK(s.find(5) == s.end());
+    BOOST_CHECK(s.find(15) == s.end());
+    BOOST_CHECK(s.find(0) == s.end());
+    BOOST_CHECK(s.find(11) == s.end());
+    BOOST_CHECK(s.find(8) == s.end());
+    BOOST_CHECK(s.find(20) == s.end());
+    BOOST_CHECK(s.find(-1) == s.end());
+
+    s.insert(10);
+    s.insert(5);
+    s.insert(15);
+    s.insert(0);
+    s.insert(11);
+    s.insert(8);
+    s.insert(20);
+    s.insert(-1);
+
+    BOOST_CHECK(s.find(10) != s.end());
+    BOOST_CHECK(s.find(5) != s.end());
+    BOOST_CHECK(s.find(15) != s.end());
+    BOOST_CHECK(s.find(0) != s.end());
+    BOOST_CHECK(s.find(11) != s.end());
+    BOOST_CHECK(s.find(8) != s.end());
+    BOOST_CHECK(s.find(20) != s.end());
+    BOOST_CHECK(s.find(-1) != s.end());
+}
+
 #ifdef HAVE_CPP0X
 
 BOOST_AUTO_TEST_CASE(move)

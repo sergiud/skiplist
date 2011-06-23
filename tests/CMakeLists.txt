@@ -31,11 +31,14 @@ target_link_libraries (test_skiplist ${Boost_LIBRARIES} ${skiplist_LIBRARIES}
   ${skiplist_LIBRARY})
 
 add_test (sorting test_skiplist -t sorting)
-add_test (insertion test_skiplist -t deletion)
+add_test (insertion test_skiplist -t insertion)
+add_test (deletion test_skiplist -t deletion)
 add_test (duplicates test_skiplist -t duplicates)
 add_test (iterators test_skiplist -t iterators)
-add_test (swap test_skiplist -t copy)
+add_test (copy test_skiplist -t copy)
+add_test (swap test_skiplist -t swap)
 add_test (comparison test_skiplist -t comparison)
+add_test (find test_skiplist -t find)
 
 if (HAVE_CPP0X) # set by skiplist config
   add_test (move test_skiplist -t move)
