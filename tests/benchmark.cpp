@@ -32,7 +32,7 @@
 
 void test_skiplist(std::size_t count, boost::random::mt19937& gen)
 {
-    Skiplist<int, int> s;
+    SkipListSet<int> s;
     boost::random::uniform_int_distribution<> d;
 
     std::cout << "performing " << count << " skip list insertions...\n";
@@ -40,7 +40,7 @@ void test_skiplist(std::size_t count, boost::random::mt19937& gen)
     std::clock_t start = std::clock();
 
     for (std::size_t i = 0; i != count; ++i)
-        s.insert(std::make_pair(d(gen), 1));
+        s.insert(d(gen));
 
     double elapsed = double(std::clock() - start) / CLOCKS_PER_SEC;
     std::cout << "done. elapsed time: " << elapsed << "s\n";

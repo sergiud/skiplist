@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#define BOOST_TEST_MODULE Skiplist
+#define BOOST_TEST_MODULE SkipList
 
 #include <algorithm>
 #include <utility>
@@ -35,33 +35,33 @@
 
 #include "skiplist.hpp"
 
-typedef Skiplist<int, int> IntSkipList;
+typedef SkipListSet<int> IntSkipList;
 
 BOOST_AUTO_TEST_CASE(sorting)
 {
     IntSkipList s;
 
-    s.insert(std::make_pair(1, 1));
-    s.insert(std::make_pair(10, 2));
-    s.insert(std::make_pair(5, 1));
-    s.insert(std::make_pair(15, 1));
-    s.insert(std::make_pair(0, 1));
-    s.insert(std::make_pair(11, 1));
-    s.insert(std::make_pair(8, 1));
-    s.insert(std::make_pair(20, 1));
-    s.insert(std::make_pair(-1, 1));
+    s.insert(1);
+    s.insert(10);
+    s.insert(5);
+    s.insert(15);
+    s.insert(0);
+    s.insert(11);
+    s.insert(8);
+    s.insert(20);
+    s.insert(-1);
 
-    std::vector<std::pair<int, int> > v(s.begin(), s.end());
+    std::vector<int> v(s.begin(), s.end());
 
-    BOOST_CHECK_EQUAL(v[0].first,-1);
-    BOOST_CHECK_EQUAL(v[1].first, 0);
-    BOOST_CHECK_EQUAL(v[2].first, 1);
-    BOOST_CHECK_EQUAL(v[3].first, 5);
-    BOOST_CHECK_EQUAL(v[4].first, 8);
-    BOOST_CHECK_EQUAL(v[5].first, 10);
-    BOOST_CHECK_EQUAL(v[6].first, 11);
-    BOOST_CHECK_EQUAL(v[7].first, 15);
-    BOOST_CHECK_EQUAL(v[8].first, 20);
+    BOOST_CHECK_EQUAL(v[0],-1);
+    BOOST_CHECK_EQUAL(v[1], 0);
+    BOOST_CHECK_EQUAL(v[2], 1);
+    BOOST_CHECK_EQUAL(v[3], 5);
+    BOOST_CHECK_EQUAL(v[4], 8);
+    BOOST_CHECK_EQUAL(v[5], 10);
+    BOOST_CHECK_EQUAL(v[6], 11);
+    BOOST_CHECK_EQUAL(v[7], 15);
+    BOOST_CHECK_EQUAL(v[8], 20);
 }
 
 BOOST_AUTO_TEST_CASE(insertion)
@@ -70,15 +70,15 @@ BOOST_AUTO_TEST_CASE(insertion)
 
     BOOST_CHECK(s.empty());
 
-    BOOST_CHECK_EQUAL(s.insert(std::make_pair(1, 1))->first, 1);
-    BOOST_CHECK_EQUAL(s.insert(std::make_pair(10, 2))->first, 10);
-    BOOST_CHECK_EQUAL(s.insert(std::make_pair(5, 1))->first, 5);
-    BOOST_CHECK_EQUAL(s.insert(std::make_pair(15, 1))->first, 15);
-    BOOST_CHECK_EQUAL(s.insert(std::make_pair(0, 1))->first, 0);
-    BOOST_CHECK_EQUAL(s.insert(std::make_pair(11, 1))->first, 11);
-    BOOST_CHECK_EQUAL(s.insert(std::make_pair(8, 1))->first, 8);
-    BOOST_CHECK_EQUAL(s.insert(std::make_pair(20, 1))->first, 20);
-    BOOST_CHECK_EQUAL(s.insert(std::make_pair(-1, 1))->first, -1);
+    BOOST_CHECK_EQUAL(*s.insert(1).first, 1);
+    BOOST_CHECK_EQUAL(*s.insert(10).first, 10);
+    BOOST_CHECK_EQUAL(*s.insert(5).first, 5);
+    BOOST_CHECK_EQUAL(*s.insert(15).first, 15);
+    BOOST_CHECK_EQUAL(*s.insert(0).first, 0);
+    BOOST_CHECK_EQUAL(*s.insert(11).first, 11);
+    BOOST_CHECK_EQUAL(*s.insert(8).first, 8);
+    BOOST_CHECK_EQUAL(*s.insert(20).first, 20);
+    BOOST_CHECK_EQUAL(*s.insert(-1).first, -1);
 
     BOOST_CHECK(s.find(1) != s.end());
     BOOST_CHECK(s.find(10) != s.end());
@@ -95,16 +95,15 @@ BOOST_AUTO_TEST_CASE(insertion)
     BOOST_CHECK(s.size() == boost::distance(s));
 
     BOOST_CHECK_EQUAL(boost::distance(s), s.size());
-    BOOST_CHECK_EQUAL(s.front().first, -1);
-    BOOST_CHECK_EQUAL(s.back().first, 20);
+    BOOST_CHECK_EQUAL(s.front(), -1);
+    BOOST_CHECK_EQUAL(s.back(), 20);
 
     IntSkipList s1;
-    s1.insert(std::make_pair(1, 1));
+    s1.insert(1);
 
-    BOOST_CHECK(s1.erase(s1.insert(std::make_pair(2, 1))) == s1.end());
+    BOOST_CHECK(s1.erase(s1.insert(2).first) == s1.end());
 
-    IntSkipList::iterator it2 =
-        s1.insert(std::make_pair(2, 1));
+    IntSkipList::iterator it2 = s1.insert(2).first;
 
     BOOST_CHECK(s1.erase(s1.find(1)) == it2);
     BOOST_CHECK(boost::distance(s1) == 1);
@@ -116,44 +115,44 @@ BOOST_AUTO_TEST_CASE(insertion)
 BOOST_AUTO_TEST_CASE(deletion)
 {
     IntSkipList s;
-    s.erase(s.insert(std::make_pair(1, 1)));
+    s.erase(s.insert(1).first);
 
     BOOST_CHECK(s.empty());
     BOOST_CHECK_EQUAL(boost::distance(s), 0);
 
-    s.insert(std::make_pair(10, 2));
-    s.insert(std::make_pair(5, 1));
-    s.insert(std::make_pair(15, 1));
-    s.insert(std::make_pair(0, 1));
-    s.insert(std::make_pair(11, 1));
-    s.insert(std::make_pair(8, 1));
-    s.insert(std::make_pair(20, 1));
-    s.insert(std::make_pair(-1, 1));
+    s.insert(10);
+    s.insert(5);
+    s.insert(15);
+    s.insert(0);
+    s.insert(11);
+    s.insert(8);
+    s.insert(20);
+    s.insert(-1);
 
     BOOST_CHECK_EQUAL(s.size(), 8);
     BOOST_CHECK_EQUAL(boost::distance(s), s.size());
 
-    BOOST_CHECK_EQUAL(s.front().first, -1);
-    BOOST_CHECK_EQUAL(s.back().first, 20);
+    BOOST_CHECK_EQUAL(s.front(), -1);
+    BOOST_CHECK_EQUAL(s.back(), 20);
 
     s.erase(s.find(-1));
 
     BOOST_CHECK_EQUAL(s.size(), 7);
     BOOST_CHECK_EQUAL(boost::distance(s), s.size());
-    BOOST_CHECK_EQUAL(s.front().first, 0);
+    BOOST_CHECK_EQUAL(s.front(), 0);
 
     s.erase(s.find(20));
 
     BOOST_CHECK_EQUAL(s.size(), 6);
     BOOST_CHECK_EQUAL(boost::distance(s), s.size());
-    BOOST_CHECK_EQUAL(s.back().first, 15);
+    BOOST_CHECK_EQUAL(s.back(), 15);
 }
 
 BOOST_AUTO_TEST_CASE(duplicates)
 {
     IntSkipList s;
 
-    s.insert(std::make_pair(1, 1));
+    s.insert(1);
     s.erase(s.find(1));
 
     BOOST_CHECK(s.empty());
@@ -165,14 +164,14 @@ BOOST_AUTO_TEST_CASE(iterators)
     IntSkipList s;
     BOOST_CHECK_EQUAL(boost::distance(s), 0);
 
-    s.insert(std::make_pair(10, 2));
-    s.insert(std::make_pair(5, 1));
-    s.insert(std::make_pair(15, 1));
-    s.insert(std::make_pair(0, 1));
-    s.insert(std::make_pair(11, 1));
-    s.insert(std::make_pair(8, 1));
-    s.insert(std::make_pair(20, 1));
-    s.insert(std::make_pair(-1, 1));
+    s.insert(10);
+    s.insert(5);
+    s.insert(15);
+    s.insert(0);
+    s.insert(11);
+    s.insert(8);
+    s.insert(20);
+    s.insert(-1);
 
     BOOST_CHECK_EQUAL(s.size(), 8);
     BOOST_CHECK_EQUAL(boost::distance(s), s.size());
@@ -184,14 +183,14 @@ BOOST_AUTO_TEST_CASE(copy)
     IntSkipList s;
     BOOST_CHECK_EQUAL(boost::distance(s), 0);
 
-    s.insert(std::make_pair(10, 2));
-    s.insert(std::make_pair(5, 1));
-    s.insert(std::make_pair(15, 1));
-    s.insert(std::make_pair(0, 1));
-    s.insert(std::make_pair(11, 1));
-    s.insert(std::make_pair(8, 1));
-    s.insert(std::make_pair(20, 1));
-    s.insert(std::make_pair(-1, 1));
+    s.insert(10);
+    s.insert(5);
+    s.insert(15);
+    s.insert(0);
+    s.insert(11);
+    s.insert(8);
+    s.insert(20);
+    s.insert(-1);
 
     IntSkipList s1 = s;
 
@@ -210,14 +209,14 @@ BOOST_AUTO_TEST_CASE(swap)
     IntSkipList s;
     BOOST_CHECK_EQUAL(boost::distance(s), 0);
 
-    s.insert(std::make_pair(10, 2));
-    s.insert(std::make_pair(5, 1));
-    s.insert(std::make_pair(15, 1));
-    s.insert(std::make_pair(0, 1));
-    s.insert(std::make_pair(11, 1));
-    s.insert(std::make_pair(8, 1));
-    s.insert(std::make_pair(20, 1));
-    s.insert(std::make_pair(-1, 1));
+    s.insert(10);
+    s.insert(5);
+    s.insert(15);
+    s.insert(0);
+    s.insert(11);
+    s.insert(8);
+    s.insert(20);
+    s.insert(-1);
 
     IntSkipList s1 = s;
 
@@ -237,15 +236,15 @@ BOOST_AUTO_TEST_CASE(comparison)
 {
     IntSkipList s;
 
-    s.insert(std::make_pair(1, 1));
-    s.insert(std::make_pair(10, 2));
-    s.insert(std::make_pair(5, 1));
-    s.insert(std::make_pair(15, 1));
-    s.insert(std::make_pair(0, 1));
-    s.insert(std::make_pair(11, 1));
-    s.insert(std::make_pair(8, 1));
-    s.insert(std::make_pair(20, 1));
-    s.insert(std::make_pair(-1, 1));
+    s.insert(1);
+    s.insert(10);
+    s.insert(5);
+    s.insert(15);
+    s.insert(0);
+    s.insert(11);
+    s.insert(8);
+    s.insert(20);
+    s.insert(-1);
 
     IntSkipList s1 = s;
 
@@ -258,15 +257,15 @@ BOOST_AUTO_TEST_CASE(move)
 {
     IntSkipList s;
 
-    s.insert(std::make_pair(1, 1));
-    s.insert(std::make_pair(10, 2));
-    s.insert(std::make_pair(5, 1));
-    s.insert(std::make_pair(15, 1));
-    s.insert(std::make_pair(0, 1));
-    s.insert(std::make_pair(11, 1));
-    s.insert(std::make_pair(8, 1));
-    s.insert(std::make_pair(20, 1));
-    s.insert(std::make_pair(-1, 1));
+    s.insert(1);
+    s.insert(10);
+    s.insert(5);
+    s.insert(15);
+    s.insert(0);
+    s.insert(11);
+    s.insert(8);
+    s.insert(20);
+    s.insert(-1);
 
     IntSkipList s1(std::move(s));
 

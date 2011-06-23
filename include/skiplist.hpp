@@ -53,6 +53,30 @@
 #include <boost/random/negative_binomial_distribution.hpp>
 #endif // HAVE_BOOST
 
+namespace detail {
+
+//! Identity selection.
+template<class T>
+struct Identity
+{
+    const T& operator()(const T& value) const
+    {
+        return value;
+    }
+};
+
+//! Selects the first value of a pair.
+template<class T>
+struct Select1st
+{
+    const typename T::first_type& operator()(const T& value) const
+    {
+        return value.first;
+    }
+};
+
+} // namespace detail
+
 /**
  * @brief Skip list implementation.
  *
@@ -71,6 +95,7 @@ template
 <
       class Key
     , class T
+    , class KeyOfValue
     , class Distribution
 #ifdef HAVE_CPP0X
         = std::negative_binomial_distribution<std::size_t>
@@ -86,7 +111,7 @@ template
     , class Compare = std::less<Key>
     , class Allocator = std::allocator<std::pair<const Key, T> >
 >
-class Skiplist
+class SkipList
 {
     struct Node;
 
@@ -94,7 +119,6 @@ class Skiplist
 
 public:
     typedef Key key_type;
-    typedef T mapped_type;
     typedef Allocator allocator_type;
     typedef Distribution distribution_type;
     typedef typename allocator_type::value_type value_type;
@@ -158,16 +182,16 @@ public:
         }
 
     private:
-        friend class Skiplist;
+        friend class SkipList;
 
-        explicit const_iterator(const Skiplist* parent, const Node* node = NULL)
+        explicit const_iterator(const SkipList* parent, const Node* node = NULL)
             : parent(parent)
             , node(node)
         {
         }
 
         const Node* node;
-        const Skiplist* parent;
+        const SkipList* parent;
     };
 
     class iterator
@@ -215,9 +239,9 @@ public:
         }
 
     private:
-        friend class Skiplist;
+        friend class SkipList;
 
-        explicit iterator(Skiplist* parent, Node* node = NULL)
+        explicit iterator(SkipList* parent, Node* node = NULL)
             : const_iterator(parent, node)
         {
         }
@@ -226,12 +250,12 @@ public:
     typedef std::reverse_iterator<iterator> reverse_iterator;
     typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
-    Skiplist()
+    SkipList()
     {
         xinit();
     }
 
-    explicit Skiplist(const Allocator& allocator)
+    explicit SkipList(const Allocator& allocator)
         : allocator_(allocator)
         , nallocator_(allocator)
         , eallocator_(allocator)
@@ -239,7 +263,7 @@ public:
         xinit();
     }
 
-    explicit Skiplist(const Engine& engine,
+    explicit SkipList(const Engine& engine,
             const Allocator& allocator = Allocator())
         : engine_(engine)
         , allocator_(allocator)
@@ -249,7 +273,7 @@ public:
         xinit();
     }
 
-    explicit Skiplist(const Distribution& distribution,
+    explicit SkipList(const Distribution& distribution,
             const Engine& engine = Engine(),
             const Compare& predicate = Compare(),
             const Allocator& allocator = Allocator())
@@ -263,7 +287,7 @@ public:
         xinit();
     }
 
-    Skiplist(const Skiplist& other)
+    SkipList(const SkipList& other)
         : engine_(other.engine_)
         , nallocator_(other.nallocator_)
         , allocator_(other.allocator_)
@@ -277,7 +301,7 @@ public:
 
 #ifdef HAVE_CPP0X
 
-    Skiplist(std::initializer_list<value_type> values,
+    SkipList(std::initializer_list<value_type> values,
         const Allocator& allocator = Allocator())
         : nallocator_(other.nallocator_)
         , allocator_(other.allocator_)
@@ -287,7 +311,7 @@ public:
         insert(values.begin(), values.end());
     }
 
-    Skiplist(Skiplist&& other)
+    SkipList(SkipList&& other)
         : engine_(std::move(other.engine_))
         , nallocator_(std::move(other.nallocator_))
         , allocator_(std::move(other.allocator_))
@@ -308,19 +332,19 @@ public:
         other.end_ = NULL;
     }
 
-    Skiplist& operator=(Skiplist&& other)
+    SkipList& operator=(SkipList&& other)
     {
         if (get_allocator() != other.get_allocator())
             *this = other; // deep copy
         else
-            Skiplist(std::move(other)).swap(*this);
+            SkipList(std::move(other)).swap(*this);
 
         return *this;
     }
 
 #endif // HAVE_CPP0X
 
-    ~Skiplist()
+    ~SkipList()
     {
         if (block_)
             xtidy();
@@ -348,12 +372,12 @@ public:
 
     const_iterator cbegin() const
     {
-        return const_cast<Skiplist*>(this)->begin();
+        return const_iterator(this, xbegin());
     }
 
     const_iterator cend() const
     {
-        return const_cast<Skiplist*>(this)->end();
+        return const_iterator(this, end_);
     }
 
     const_iterator begin() const
@@ -368,7 +392,7 @@ public:
 
     iterator begin()
     {
-        return empty() ? end() : iterator(this, head_);
+        return iterator(this, xbegin());
     }
 
     iterator end()
@@ -408,25 +432,27 @@ public:
 
     const_reference front() const
     {
-        return const_cast<Skiplist*>(this)->front();
+        return *begin();
     }
 
     reference front()
     {
-        return *begin();
+        return const_cast<reference>
+            (static_cast<const SkipList*>(this)->front());
     }
 
     const_reference back() const
     {
-        return const_cast<Skiplist*>(this)->back();
+        return tail_->previous->next.front()->value;
     }
 
     reference back()
     {
-        return tail_->previous->next.front()->value;
+        return const_cast<reference>
+            (static_cast<const SkipList*>(this)->back());
     }
 
-    void swap(Skiplist& other)
+    void swap(SkipList& other)
     {
         using std::swap;  // Allow ADL
 
@@ -470,7 +496,7 @@ public:
         xinsert(values.begin(), values.end());
     }
 
-    Skiplist& operator=(std::initializer_list<value_type> values)
+    SkipList& operator=(std::initializer_list<value_type> values)
     {
         clear();
         insert(values);
@@ -480,12 +506,13 @@ public:
 
 #endif // HAVE_CPP0X
 
-    iterator insert(const_reference value)
+    std::pair<iterator, bool> insert(const_reference value)
     {
         return insert(end(), value);
     }
 
-    iterator insert(const_iterator where, const_reference value)
+    std::pair<iterator, bool>
+        insert(const_iterator where, const_reference value)
     {
         return xinsert(where, value);
     }
@@ -590,7 +617,7 @@ public:
 
         for ( ; level >= 0; --level) {
             while ((nextNode = node->next[level]) &&
-                    compare_(nextNode->value.first, key))
+                    compare_(KeyOfValue()(nextNode->value), key))
                 node = nextNode;
         }
 
@@ -600,7 +627,7 @@ public:
         iterator result;
         Element* candidate = node->next.front();
 
-        if (candidate && xequal(candidate->value.first, key))
+        if (candidate && xequal(KeyOfValue()(candidate->value), key))
             result = iterator(this, node);
         else
             result = end();
@@ -610,7 +637,7 @@ public:
 
     const_iterator find(const key_type& key) const
     {
-        return const_cast<Skiplist*>(this)->find(key);
+        return const_cast<SkipList*>(this)->find(key);
     }
 
 private:
@@ -726,11 +753,12 @@ private:
     }
 
     template<class V>
-    iterator xinsert(const_iterator where, V value)
+    std::pair<iterator, bool> xinsert(const_iterator where, V value)
     {
         assert(where.parent == this && "Invalid iterator");
 
         iterator result(this);
+        bool inserted = true;
 
         Node* currentNode = head_;
         typename ElementPtrVector::difference_type i =
@@ -742,7 +770,8 @@ private:
 
         for ( ; i >= 0; --i) {
             while (currentNode->next[i] &&
-                compare_(currentNode->next[i]->value.first, value.first))
+                compare_(KeyOfValue()(currentNode->next[i]->value),
+                    KeyOfValue()(value)))
                 currentNode = currentNode->next[i];
 
             update_[i] = currentNode;
@@ -751,11 +780,10 @@ private:
         assert(currentNode);
 
         if (!currentNode->next.empty() && currentNode->next.front() &&
-            xequal(currentNode->next.front()->value.first, value.first)) {
-            // The key already exists: update the value
-            Element* node = currentNode->next.front();
-            node->value.second = value.second;
-            result.node = node->previous;
+            xequal(KeyOfValue()(currentNode->next.front()->value),
+                KeyOfValue()(value))) {
+            result.node = currentNode->next.front(); // Key already exists
+            inserted = false;
         }
         else {
             typedef typename ElementPtrVector::size_type next_size_type;
@@ -815,7 +843,7 @@ private:
             result.node = node->previous;
         }
 
-        return result;
+        return std::make_pair(result, inserted);
     }
 
     Element* xconstruct(
@@ -844,6 +872,11 @@ private:
         eallocator_.deallocate(e, 1);
     }
 
+    Node* xbegin() const
+    {
+        return empty() ? end_ : head_;
+    }
+
     engine_type engine_;
     allocator_type allocator_;
     size_type size_;
@@ -858,11 +891,11 @@ private:
     NodePtrVector update_;
 };
 
-template<class Key, class T, class Distribution, class Engine, class Compare,
-    class Allocator>
-inline typename Skiplist<Key, T, Distribution, Engine, Compare,
-       Allocator>::const_iterator& Skiplist<Key, T, Distribution, Engine,
-       Compare, Allocator>::const_iterator::operator++()
+template<class Key, class T, class KeyOfValue, class Distribution, class Engine,
+    class Compare, class Allocator>
+inline typename SkipList<Key, T, KeyOfValue, Distribution, Engine, Compare,
+       Allocator>::const_iterator& SkipList<Key, T, KeyOfValue, Distribution,
+       Engine, Compare, Allocator>::const_iterator::operator++()
 {
     assert(node != parent->end_ && "Iterator passed behind the end");
     assert(node && "Iterator is not dereferencable");
@@ -875,11 +908,11 @@ inline typename Skiplist<Key, T, Distribution, Engine, Compare,
     return *this;
 }
 
-template<class Key, class T, class Distribution, class Engine, class Compare,
-class Allocator>
-inline typename Skiplist<Key, T, Distribution, Engine, Compare,
-       Allocator>::const_iterator& Skiplist<Key, T, Distribution, Engine,
-       Compare, Allocator>::const_iterator::operator--()
+template<class Key, class T, class KeyOfValue, class Distribution, class Engine,
+    class Compare, class Allocator>
+inline typename SkipList<Key, T, KeyOfValue, Distribution, Engine, Compare,
+       Allocator>::const_iterator& SkipList<Key, T, KeyOfValue, Distribution,
+       Engine, Compare, Allocator>::const_iterator::operator--()
 {
     assert(node != parent->head_ && "Iterator passed behind the start");
     assert(node && "Iterator is not dereferencable");
@@ -892,11 +925,11 @@ inline typename Skiplist<Key, T, Distribution, Engine, Compare,
     return *this;
 }
 
-template<class Key, class T, class Distribution, class Engine, class Compare,
-    class Allocator>
-inline typename Skiplist<Key, T, Distribution, Engine, Compare,
-       Allocator>::const_reference Skiplist<Key, T, Distribution, Engine,
-       Compare, Allocator>::const_iterator::operator*()
+template<class Key, class T, class KeyOfValue, class Distribution, class Engine,
+    class Compare, class Allocator>
+inline typename SkipList<Key, T, KeyOfValue, Distribution, Engine, Compare,
+       Allocator>::const_reference SkipList<Key, T, KeyOfValue, Distribution,
+       Engine, Compare, Allocator>::const_iterator::operator*()
 {
     assert(node && "Iterator is not dereferencable");
     assert(!node->next.empty() && "Invalid iterator");
@@ -904,11 +937,11 @@ inline typename Skiplist<Key, T, Distribution, Engine, Compare,
     return node->next.front()->value;
 }
 
-template<class Key, class T, class Distribution, class Engine, class Compare,
-    class Allocator>
-inline typename Skiplist<Key, T, Distribution, Engine, Compare,
-       Allocator>::const_pointer Skiplist<Key, T, Distribution, Engine, Compare,
-       Allocator>::const_iterator::operator->()
+template<class Key, class T, class KeyOfValue, class Distribution, class Engine,
+    class Compare, class Allocator>
+inline typename SkipList<Key, T, KeyOfValue, Distribution, Engine, Compare,
+       Allocator>::const_pointer SkipList<Key, T, KeyOfValue, Distribution,
+       Engine, Compare, Allocator>::const_iterator::operator->()
 {
     assert(node && "Iterator is not dereferencable");
     assert(!node->next.empty() && "Invalid iterator");
@@ -917,73 +950,231 @@ inline typename Skiplist<Key, T, Distribution, Engine, Compare,
 }
 
 // Returns x == y
-template<class Key, class T, class Distribution, class Engine, class Compare,
-    class Allocator>
-inline bool operator==(const Skiplist<Key, T, Distribution, Engine, Compare,
-        Allocator>& lhs, const Skiplist<Key, T, Distribution, Engine, Compare,
-        Allocator>& rhs)
+template<class Key, class T, class KeyOfValue, class Distribution, class Engine,
+    class Compare, class Allocator>
+inline bool operator==(const SkipList<Key, T, KeyOfValue, Distribution, Engine,
+        Compare, Allocator>& lhs, const SkipList<Key, T, KeyOfValue,
+        Distribution, Engine, Compare, Allocator>& rhs)
 {
     return lhs.size() == rhs.size() &&
         std::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
 
 // Returns !(x == y)
-template<class Key, class T, class Distribution, class Engine, class Compare,
-    class Allocator>
-inline bool operator!=(const Skiplist<Key, T, Distribution, Engine, Compare,
-        Allocator>& lhs, const Skiplist<Key, T, Distribution, Engine, Compare,
-        Allocator>& rhs)
+template<class Key, class T, class KeyOfValue, class Distribution, class Engine,
+    class Compare, class Allocator>
+inline bool operator!=(const SkipList<Key, T, KeyOfValue, Distribution, Engine,
+        Compare, Allocator>& lhs, const SkipList<Key, T, KeyOfValue,
+        Distribution, Engine, Compare, Allocator>& rhs)
 {
     return !(lhs == rhs);
 }
 
-template<class Key, class T, class Distribution, class Engine, class Compare,
-    class Allocator>
-inline bool operator<(const Skiplist<Key, T, Distribution, Engine, Compare,
-        Allocator>& lhs, const Skiplist<Key, T, Distribution, Engine, Compare,
-        Allocator>& rhs)
+template<class Key, class T, class KeyOfValue, class Distribution, class Engine,
+    class Compare, class Allocator>
+inline bool operator<(const SkipList<Key, T, KeyOfValue, Distribution, Engine,
+        Compare, Allocator>& lhs, const SkipList<Key, T, KeyOfValue,
+        Distribution, Engine, Compare, Allocator>& rhs)
 {
     return std::lexicographical_compare(lhs.begin(), lhs.end(),
         rhs.begin(), rhs.end());
 }
 
 // // Returns !(x > y)
-template<class Key, class T, class Distribution, class Engine, class Compare,
-    class Allocator>
-inline bool operator<=(const Skiplist<Key, T, Distribution, Engine, Compare,
-        Allocator>& lhs, const Skiplist<Key, T, Distribution, Engine, Compare,
-        Allocator>& rhs)
+template<class Key, class T, class KeyOfValue, class Distribution, class Engine,
+    class Compare, class Allocator>
+inline bool operator<=(const SkipList<Key, T, KeyOfValue, Distribution, Engine,
+        Compare, Allocator>& lhs, const SkipList<Key, T, KeyOfValue,
+        Distribution, Engine, Compare, Allocator>& rhs)
 {
     return !(lhs > rhs);
 }
 
 // Returns y < x
-template<class Key, class T, class Distribution, class Engine, class Compare,
-    class Allocator>
-inline bool operator>(const Skiplist<Key, T, Distribution, Engine, Compare,
-        Allocator>& lhs, const Skiplist<Key, T, Engine, Compare, Allocator>&
-        rhs)
+template<class Key, class T, class KeyOfValue, class Distribution, class Engine,
+    class Compare, class Allocator>
+inline bool operator>(const SkipList<Key, T, KeyOfValue, Distribution, Engine,
+        Compare, Allocator>& lhs, const SkipList<Key, T, KeyOfValue,
+        Distribution, Engine, Compare, Allocator>& rhs)
 {
     return rhs < lhs;
 }
 
 // Returns !(x < y)
-template<class Key, class T, class Distribution, class Engine, class Compare,
-    class Allocator>
-inline bool operator>=(const Skiplist<Key, T, Distribution, Engine, Compare,
-        Allocator>& lhs, const Skiplist<Key, T, Distribution, Engine, Compare,
-        Allocator>& rhs)
+template<class Key, class T, class KeyOfValue, class Distribution, class Engine,
+    class Compare, class Allocator>
+inline bool operator>=(const SkipList<Key, T, KeyOfValue, Distribution, Engine,
+        Compare, Allocator>& lhs, const SkipList<Key, T, KeyOfValue,
+        Distribution, Engine, Compare, Allocator>& rhs)
 {
     return !(lhs < rhs);
 }
+
+template
+<
+      class Key
+    , class T
+    , class Distribution
+#ifdef HAVE_CPP0X
+        = std::negative_binomial_distribution<std::size_t>
+#elif defined(HAVE_BOOST)
+        = boost::random::negative_binomial_distribution<std::size_t>
+#endif // HAVE_CPP0X
+    , class Engine
+#ifdef HAVE_CPP0X
+        = std::default_random_engine
+#elif defined(HAVE_BOOST)
+        = boost::random::mt19937
+#endif // HAVE_CPP0X
+    , class Compare = std::less<Key>
+    , class Allocator = std::allocator<std::pair<const Key, T> >
+>
+class SkipListMap
+    : public SkipList
+      <
+          Key,
+          std::pair<const Key, T>,
+          detail::Select1st<std::pair<const Key, T> >,
+          Distribution,
+          Engine,
+          Compare,
+          Allocator
+      >
+{
+public:
+    SkipListMap()
+    {
+    }
+
+    explicit SkipListMap(const Allocator& allocator)
+        : SkipList(allocator)
+    {
+    }
+
+    explicit SkipListMap(const Engine& engine,
+        const Allocator& allocator = Allocator())
+        : SkipList(engine, allocator)
+    {
+    }
+
+    explicit SkipListMap(const Distribution& distribution,
+        const Engine& engine = Engine(),
+        const Compare& predicate = Compare(),
+        const Allocator& allocator = Allocator())
+        : SkipList(distribution, engine, compare, allocator)
+    {
+    }
+
+#ifdef HAVE_CPP0X
+
+    SkipListMap(SkipListMap&& other)
+        : SkipList(std::move(other))
+    {
+    }
+
+    SkipListMap(std::initializer_list<value_type> values,
+        const Allocator& allocator = Allocator())
+        : SkipList(values, allocator)
+    {
+        xinit();
+        insert(values.begin(), values.end());
+    }
+
+    SkipListMap& operator=(SkipListMap&& other)
+    {
+        *static_cast<SkipList*>(this) = std::move(other);
+        return *this;
+    }
+
+#endif // HAVE_CPP0X
+};
+
+template
+<
+      class Key
+    , class Distribution
+#ifdef HAVE_CPP0X
+        = std::negative_binomial_distribution<std::size_t>
+#elif defined(HAVE_BOOST)
+        = boost::random::negative_binomial_distribution<std::size_t>
+#endif // HAVE_CPP0X
+    , class Engine
+#ifdef HAVE_CPP0X
+        = std::default_random_engine
+#elif defined(HAVE_BOOST)
+        = boost::random::mt19937
+#endif // HAVE_CPP0X
+    , class Compare = std::less<Key>
+    , class Allocator = std::allocator<const Key>
+>
+class SkipListSet
+    : public SkipList
+      <
+          Key,
+          const Key,
+          detail::Identity<Key>,
+          Distribution,
+          Engine,
+          Compare,
+          Allocator
+      >
+{
+public:
+    SkipListSet()
+    {
+    }
+
+    explicit SkipListSet(const Allocator& allocator)
+        : SkipList(allocator)
+    {
+    }
+
+    explicit SkipListSet(const Engine& engine,
+        const Allocator& allocator = Allocator())
+        : SkipList(engine, allocator)
+    {
+    }
+
+    explicit SkipListSet(const Distribution& distribution,
+        const Engine& engine = Engine(),
+        const Compare& predicate = Compare(),
+        const Allocator& allocator = Allocator())
+        : SkipList(distribution, engine, compare, allocator)
+    {
+    }
+
+#ifdef HAVE_CPP0X
+
+    SkipListSet(SkipListSet&& other)
+        : SkipList(std::move(other))
+    {
+    }
+
+    SkipListSet(std::initializer_list<value_type> values,
+        const Allocator& allocator = Allocator())
+        : SkipList(values, allocator)
+    {
+        xinit();
+        insert(values.begin(), values.end());
+    }
+
+    SkipListSet& operator=(SkipListSet&& other)
+    {
+        *static_cast<SkipList*>(this) = std::move(other);
+        return *this;
+    }
+
+#endif // HAVE_CPP0X
+};
 
 namespace std {
 
 // Provide a specialization for std::swap
 
-template<class Key, class T, class Distribution, class Engine, class Compare,
-class Allocator> inline void swap(Skiplist<Key, T, Distribution, Engine,
-        Compare, Allocator>& lhs, Skiplist<Key, T, Distribution, Engine,
+template<class Key, class T, class KeyOfValue, class Distribution, class Engine,
+    class Compare, class Allocator>
+inline void swap(SkipList<Key, T, KeyOfValue, Distribution, Engine, Compare,
+        Allocator>& lhs, SkipList<Key, T, KeyOfValue, Distribution, Engine,
         Compare, Allocator>& rhs)
 {
     lhs.swap(rhs)
