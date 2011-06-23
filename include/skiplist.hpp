@@ -114,9 +114,6 @@ template
 class SkipList
 {
     struct Node;
-
-    typedef std::pair<Key, T> pair_type;
-
 public:
     typedef Key key_type;
     typedef Allocator allocator_type;
@@ -778,11 +775,12 @@ private:
         }
 
         assert(currentNode);
+        Element* valueNode;
 
-        if (!currentNode->next.empty() && currentNode->next.front() &&
-            xequal(KeyOfValue()(currentNode->next.front()->value),
-                KeyOfValue()(value))) {
-            result.node = currentNode->next.front(); // Key already exists
+        if (!currentNode->next.empty() &&
+            (valueNode = currentNode->next.front()) &&
+            xequal(KeyOfValue()(valueNode->value), KeyOfValue()(value))) {
+            result.node = valueNode; // Key already exists
             inserted = false;
         }
         else {
