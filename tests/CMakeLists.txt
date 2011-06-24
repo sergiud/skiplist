@@ -39,6 +39,7 @@ add_test (copy test_skiplist -t copy)
 add_test (swap test_skiplist -t swap)
 add_test (comparison test_skiplist -t comparison)
 add_test (find test_skiplist -t find)
+add_test (map test_skiplist -t map)
 
 if (HAVE_CPP0X) # set by skiplist config
   add_test (move test_skiplist -t move)
