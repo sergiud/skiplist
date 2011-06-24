@@ -341,6 +341,12 @@ public:
 
 #endif // HAVE_CPP0X
 
+    SkipList& operator=(const SkipList& other)
+    {
+        SkipList(other).swap(*this);
+        return *this;
+    }
+
     ~SkipList()
     {
         if (block_)
@@ -756,18 +762,29 @@ private:
         bool inserted = true;
 
         Node* currentNode = head_;
+
         typename ElementPtrVector::difference_type i =
             static_cast<ElementPtrVector::difference_type>
-                (currentNode->next.size() - 1);
+                (head_->next.size() - 1);
 
         if (update_.size() < head_->next.size())
             update_.resize(head_->next.size());
 
+        Element* nextNode;
+        const key_type& key = KeyOfValue()(value);
+        bool stop;
+
         for ( ; i >= 0; --i) {
-            while (currentNode->next[i] &&
-                compare_(KeyOfValue()(currentNode->next[i]->value),
-                    KeyOfValue()(value)))
-                currentNode = currentNode->next[i];
+            stop = false;
+
+            while (!stop) {
+                nextNode = currentNode->next[i];
+
+                if (!nextNode || !compare_(KeyOfValue()(nextNode->value), key))
+                    stop = true;
+                else
+                    currentNode = nextNode;
+            }
 
             update_[i] = currentNode;
         }
@@ -913,8 +930,10 @@ inline typename SkipList<Key, T, KeyOfValue, Distribution, Engine, Compare,
     assert(node != parent->head_ && "Iterator passed behind the start");
     assert(node && "Iterator is not dereferencable");
 
-    if (node == parent->end_)
+    if (node == parent->end_) {
+        assert(node->previous);
         node = node->previous->previous;
+    }
     else
         node = node->previous;
 
@@ -1042,6 +1061,12 @@ public:
     {
     }
 
+    template<class InputIterator>
+    SkipListMap(InputIterator first, InputIterator last)
+    {
+        insert(first, last);
+    }
+
     explicit SkipListMap(const Allocator& allocator)
         : SkipList(allocator)
     {
@@ -1125,6 +1150,12 @@ class SkipListSet
 public:
     SkipListSet()
     {
+    }
+
+    template<class InputIterator>
+    SkipListSet(InputIterator first, InputIterator last)
+    {
+        insert(first, last);
     }
 
     explicit SkipListSet(const Allocator& allocator)
