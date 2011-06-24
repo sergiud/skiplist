@@ -21,8 +21,8 @@
 #include <cstddef>
 #include <ctime>
 #include <iostream>
-#include <map>
 #include <memory>
+#include <set>
 
 #include <boost/cstdint.hpp>
 #include <boost/random/mersenne_twister.hpp>
@@ -56,17 +56,17 @@ void test_skiplist(std::size_t count, boost::random::mt19937& gen)
     std::cout << "done. elapsed time: " << elapsed << "s\n";
 }
 
-void test_map(std::size_t count, boost::random::mt19937& gen)
+void test_set(std::size_t count, boost::random::mt19937& gen)
 {
-    std::map<int, int> s;
+    std::set<int> s;
     boost::random::uniform_int_distribution<> d;
 
-    std::cout << "performing " << count << " map insertions...\n";
+    std::cout << "performing " << count << " set insertions...\n";
 
     std::clock_t start = std::clock();
 
     for (std::size_t i = 0; i != count; ++i)
-        s.insert(std::make_pair(d(gen), 1));
+        s.insert(d(gen));
 
     double elapsed = double(std::clock() - start) / CLOCKS_PER_SEC;
     std::cout << "done. elapsed time: " << elapsed << "s\n";
@@ -89,7 +89,7 @@ int main()
 
     try {
         test_skiplist(count, gen);
-        test_map(count, gen);
+        test_set(count, gen);
     }
     catch (std::bad_alloc&) {
         std::cout << "error: not enough memory\n";

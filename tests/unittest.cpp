@@ -24,6 +24,7 @@
 #include <utility>
 #include <vector>
 
+#include <boost/assign.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/negative_binomial_distribution.hpp>
 #include <boost/range/algorithm.hpp>
@@ -281,6 +282,24 @@ BOOST_AUTO_TEST_CASE(find)
     BOOST_CHECK(s.find(8) != s.end());
     BOOST_CHECK(s.find(20) != s.end());
     BOOST_CHECK(s.find(-1) != s.end());
+}
+
+BOOST_AUTO_TEST_CASE(map)
+{
+    SkipListMap<int, int> s;
+    s = boost::assign::map_list_of(1, 1)(2, 2)(3, 3)(4, 4)(5, 5);
+
+    BOOST_CHECK_EQUAL(s.size(), 5);
+
+    BOOST_CHECK_EQUAL(s[1], 1);
+    BOOST_CHECK_EQUAL(s[5], 5);
+
+    s[1] = 5;
+    s[5] = 1;
+
+    BOOST_CHECK_EQUAL(s.size(), 5);
+    BOOST_CHECK_EQUAL(s[1], 5);
+    BOOST_CHECK_EQUAL(s[5], 1);
 }
 
 #ifdef HAVE_CPP0X
