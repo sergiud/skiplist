@@ -1,5 +1,13 @@
 find_package (Boost 1.47 REQUIRED COMPONENTS unit_test_framework)
-find_package (VLD)
+
+if (NOT Boost_USE_STATIC_LIBS)
+  add_definitions (-DBOOST_TEST_DYN_LINK)
+endif (NOT Boost_USE_STATIC_LIBS)
+
+if (WIN32)
+  find_package (VLD)
+endif (WIN32)
+
 find_package (skiplist REQUIRED)
 
 file (GLOB PROJECT_HPP ${skiplist_INCLUDE_DIR}/*.hpp)

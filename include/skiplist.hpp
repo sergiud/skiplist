@@ -115,6 +115,7 @@ class SkipList
 {
     struct Node;
 public:
+    typedef SkipList super_type;
     typedef Key key_type;
     typedef Allocator allocator_type;
     typedef Distribution distribution_type;
@@ -591,7 +592,7 @@ public:
         xdestroy(static_cast<Element*>(node));
 
         // Remove all trailing non-null element pointers
-        ElementPtrVector::reverse_iterator it =
+        typename ElementPtrVector::reverse_iterator it =
             std::find_if(head_->next.rbegin(), head_->next.rend(),
                 std::not1(std::bind2nd(std::equal_to<Element*>(),
                     static_cast<Element*>(NULL))));
@@ -774,7 +775,7 @@ private:
         Node* currentNode = head_;
 
         typename ElementPtrVector::difference_type i =
-            static_cast<ElementPtrVector::difference_type>
+            static_cast<typename ElementPtrVector::difference_type>
                 (head_->next.size() - 1);
 
         if (update_.size() < head_->next.size())
@@ -905,7 +906,7 @@ private:
         Node* node = head_;
 
         typename ElementPtrVector::difference_type level =
-            static_cast<ElementPtrVector::difference_type>
+            static_cast<typename ElementPtrVector::difference_type>
             (node->next.size() - 1);
 
         Element* nextNode;
@@ -1094,6 +1095,16 @@ class SkipListMap
           Allocator
       >
 {
+    typedef SkipList
+      <
+          Key,
+          std::pair<const Key, T>,
+          detail::Select1st<std::pair<const Key, T> >,
+          Distribution,
+          Engine,
+          Compare,
+          Allocator
+      > super_type;
 public:
     SkipListMap()
     {
@@ -1102,19 +1113,19 @@ public:
     template<class InputIterator>
     SkipListMap(InputIterator first, InputIterator last,
         const Compare& compare = Compare())
-        : SkipList(Distribution(), Engine(), compare)
+        : super_type(Distribution(), Engine(), compare)
     {
         insert(first, last);
     }
 
     explicit SkipListMap(const Allocator& allocator)
-        : SkipList(allocator)
+        : super_type(allocator)
     {
     }
 
     explicit SkipListMap(const Engine& engine,
         const Allocator& allocator = Allocator())
-        : SkipList(engine, allocator)
+        : super_type(engine, allocator)
     {
     }
 
@@ -1122,7 +1133,7 @@ public:
         const Engine& engine = Engine(),
         const Compare& predicate = Compare(),
         const Allocator& allocator = Allocator())
-        : SkipList(distribution, engine, compare, allocator)
+        : super_type(distribution, engine, predicate, allocator)
     {
     }
 
@@ -1149,11 +1160,11 @@ public:
 
 #endif // HAVE_CPP0X
 
-    T& operator[](const key_type& key)
+    T& operator[](const Key& key)
     {
-        iterator pos = find(key);
-        return pos != end() ? pos->second :
-            insert(std::make_pair(key, T())).first->second;
+        typename super_type::iterator pos = find(key);
+        return pos != super_type::end() ? pos->second :
+            super_type::insert(std::make_pair(key, T())).first->second;
     }
 };
 
@@ -1173,7 +1184,7 @@ template
         = boost::random::mt19937
 #endif // HAVE_CPP0X
     , class Compare = std::less<Key>
-    , class Allocator = std::allocator<const Key>
+    , class Allocator = std::allocator<Key>
 >
 class SkipListSet
     : public SkipList
@@ -1187,6 +1198,17 @@ class SkipListSet
           Allocator
       >
 {
+    typedef SkipList
+      <
+          Key,
+          const Key,
+          detail::Identity<Key>,
+          Distribution,
+          Engine,
+          Compare,
+          Allocator
+      > super_type;
+
 public:
     SkipListSet()
     {
@@ -1195,19 +1217,19 @@ public:
     template<class InputIterator>
     SkipListSet(InputIterator first, InputIterator last,
         const Compare& compare = Compare())
-        : SkipList(Distribution(), Engine(), compare)
+        : super_type(Distribution(), Engine(), compare)
     {
         insert(first, last);
     }
 
     explicit SkipListSet(const Allocator& allocator)
-        : SkipList(allocator)
+        : super_type(allocator)
     {
     }
 
     explicit SkipListSet(const Engine& engine,
         const Allocator& allocator = Allocator())
-        : SkipList(engine, allocator)
+        : super_type(engine, allocator)
     {
     }
 
@@ -1215,7 +1237,7 @@ public:
         const Engine& engine = Engine(),
         const Compare& predicate = Compare(),
         const Allocator& allocator = Allocator())
-        : SkipList(distribution, engine, compare, allocator)
+        : super_type(distribution, engine, predicate, allocator)
     {
     }
 
@@ -1253,7 +1275,7 @@ inline void swap(SkipList<Key, T, KeyOfValue, Distribution, Engine, Compare,
         Allocator>& lhs, SkipList<Key, T, KeyOfValue, Distribution, Engine,
         Compare, Allocator>& rhs)
 {
-    lhs.swap(rhs)
+    lhs.swap(rhs);
 }
 
 } // namespace std
