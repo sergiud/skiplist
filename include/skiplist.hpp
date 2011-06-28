@@ -115,7 +115,6 @@ class SkipList
 {
     struct Node;
 public:
-    typedef SkipList super_type;
     typedef Key key_type;
     typedef Allocator allocator_type;
     typedef Distribution distribution_type;
