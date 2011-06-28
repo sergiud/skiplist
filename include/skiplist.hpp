@@ -514,10 +514,9 @@ public:
         return insert(end(), value);
     }
 
-    std::pair<iterator, bool>
-        insert(const_iterator where, const_reference value)
+    std::pair<iterator, bool> insert(const_iterator hint, const_reference value)
     {
-        return xinsert(where, value);
+        return xinsert(hint, value);
     }
 
     template<class InputIterator>
@@ -605,40 +604,51 @@ public:
 
     size_type count(const key_type& key) const
     {
-        return find(key) != end() ? 1 : 0;
+        std::pair<const_iterator, const_iterator> range = equal_range(key);
+        return std::distance(range.first, range.second);
     }
 
     iterator find(const key_type& key)
     {
-        Node* node = head_;
-
-        typename ElementPtrVector::difference_type level =
-            static_cast<ElementPtrVector::difference_type>
-                (node->next.size() - 1);
-
-        Element* nextNode;
-
-        for ( ; level >= 0; --level) {
-            while ((nextNode = node->next[level]) &&
-                    compare_(KeyOfValue()(nextNode->value), key))
-                node = nextNode;
-        }
-
-        assert(node);
-        iterator result;
-
-        if (!node->next.empty() &&
-            xequal(KeyOfValue()(node->next.front()->value), key))
-            result = iterator(this, node);
-        else
-            result = end();
-
-        return result;
+        return iterator(this, xfind(key));
     }
 
     const_iterator find(const key_type& key) const
     {
-        return const_cast<SkipList*>(this)->find(key);
+        return const_iterator(this, xfind(key));
+    }
+
+    const_iterator lower_bound(const key_type& key) const
+    {
+        return find(key);
+    }
+
+    iterator lower_bound(const key_type& key)
+    {
+        return find(key);
+    }
+
+    const_iterator upper_bound(const key_type& key) const
+    {
+        const_iterator it = lower_bound(key);
+        return ++it;
+    }
+
+    iterator upper_bound(const key_type& key)
+    {
+        iterator it = lower_bound(key);
+        return ++it;
+    }
+
+    std::pair<iterator, iterator> equal_range(const key_type& key)
+    {
+        return std::make_pair(lower_bound(key), upper_bound(key));
+    }
+
+    std::pair<const_iterator, const_iterator>
+        equal_range(const key_type& key) const
+    {
+        return std::make_pair(lower_bound(key), upper_bound(key));
     }
 
 private:
@@ -890,6 +900,34 @@ private:
         return empty() ? end_ : head_;
     }
 
+    Node* xfind(const key_type& key) const
+    {
+        Node* node = head_;
+
+        typename ElementPtrVector::difference_type level =
+            static_cast<ElementPtrVector::difference_type>
+            (node->next.size() - 1);
+
+        Element* nextNode;
+
+        for ( ; level >= 0; --level) {
+            while ((nextNode = node->next[level]) &&
+                compare_(KeyOfValue()(nextNode->value), key))
+                node = nextNode;
+        }
+
+        assert(node);
+        Node* result;
+
+        if (!node->next.empty() &&
+            xequal(KeyOfValue()(node->next.front()->value), key))
+            result = node;
+        else
+            result = end_;
+
+        return result;
+    }
+
     engine_type engine_;
     allocator_type allocator_;
     size_type size_;
@@ -1062,7 +1100,9 @@ public:
     }
 
     template<class InputIterator>
-    SkipListMap(InputIterator first, InputIterator last)
+    SkipListMap(InputIterator first, InputIterator last,
+        const Compare& compare = Compare())
+        : SkipList(Distribution(), Engine(), compare)
     {
         insert(first, last);
     }
@@ -1153,7 +1193,9 @@ public:
     }
 
     template<class InputIterator>
-    SkipListSet(InputIterator first, InputIterator last)
+    SkipListSet(InputIterator first, InputIterator last,
+        const Compare& compare = Compare())
+        : SkipList(Distribution(), Engine(), compare)
     {
         insert(first, last);
     }

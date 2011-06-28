@@ -282,6 +282,15 @@ BOOST_AUTO_TEST_CASE(find)
     BOOST_CHECK(s.find(8) != s.end());
     BOOST_CHECK(s.find(20) != s.end());
     BOOST_CHECK(s.find(-1) != s.end());
+
+    BOOST_CHECK_EQUAL(s.count(10), 1);
+    BOOST_CHECK_EQUAL(s.count(5), 1);
+    BOOST_CHECK_EQUAL(s.count(15), 1);
+    BOOST_CHECK_EQUAL(s.count(0), 1);
+    BOOST_CHECK_EQUAL(s.count(11), 1);
+    BOOST_CHECK_EQUAL(s.count(8), 1);
+    BOOST_CHECK_EQUAL(s.count(20), 1);
+    BOOST_CHECK_EQUAL(s.count(-1), 1);
 }
 
 BOOST_AUTO_TEST_CASE(map)
