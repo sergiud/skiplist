@@ -631,13 +631,21 @@ public:
     const_iterator upper_bound(const key_type& key) const
     {
         const_iterator it = lower_bound(key);
-        return ++it;
+
+        if (it != end())
+            ++it;
+
+        return it;
     }
 
     iterator upper_bound(const key_type& key)
     {
         iterator it = lower_bound(key);
-        return ++it;
+
+        if (it != end())
+            ++it;
+
+        return it;
     }
 
     std::pair<iterator, iterator> equal_range(const key_type& key)
@@ -919,7 +927,7 @@ private:
         assert(node);
         Node* result;
 
-        if (!node->next.empty() &&
+        if (node != end_ && node != end_->previous &&
             xequal(KeyOfValue()(node->next.front()->value), key))
             result = node;
         else
