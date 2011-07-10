@@ -1114,7 +1114,7 @@ public:
         const Compare& compare = Compare())
         : super_type(Distribution(), Engine(), compare)
     {
-        insert(first, last);
+        super_type::insert(first, last);
     }
 
     explicit SkipListMap(const Allocator& allocator)
@@ -1161,7 +1161,7 @@ public:
 
     T& operator[](const Key& key)
     {
-        typename super_type::iterator pos = find(key);
+        typename super_type::iterator pos = super_type::find(key);
         return pos != super_type::end() ? pos->second :
             super_type::insert(std::make_pair(key, T())).first->second;
     }
