@@ -49,6 +49,6 @@ add_test (comparison test_skiplist -t comparison)
 add_test (find test_skiplist -t find)
 add_test (map test_skiplist -t map)
 
-if (HAVE_CPP0X) # set by skiplist config
+if (HAVE_CXX0X) # set by skiplist config
   add_test (move test_skiplist -t move)
-endif (HAVE_CPP0X)
+endif (HAVE_CXX0X)

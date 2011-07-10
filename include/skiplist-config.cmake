@@ -7,11 +7,11 @@ set (skiplist_LIBRARY)
 
 include (CheckCXX0X)
 
-check_has_cpp0x (HAVE_CPP0X)
+check_has_cpp0x (HAVE_CXX0X)
 
-if (HAVE_CPP0X)
-  list (APPEND skiplist_DEFINITIONS -DHAVE_CPP0X)
-endif (HAVE_CPP0X)
+if (HAVE_CXX0X)
+  list (APPEND skiplist_DEFINITIONS -DHAVE_CXX0X)
+endif (HAVE_CXX0X)
 
 if (Boost_FOUND)
   list (APPEND skiplist_DEFINITIONS -DHAVE_BOOST)

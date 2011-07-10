@@ -311,7 +311,7 @@ BOOST_AUTO_TEST_CASE(map)
     BOOST_CHECK_EQUAL(s[5], 1);
 }
 
-#ifdef HAVE_CPP0X
+#ifdef HAVE_CXX0X
 
 BOOST_AUTO_TEST_CASE(move)
 {
@@ -342,4 +342,4 @@ BOOST_AUTO_TEST_CASE(move)
     BOOST_CHECK_EQUAL(s2.size(), 9);
 }
 
-#endif // HAVE_CPP0X
+#endif // HAVE_CXX0X

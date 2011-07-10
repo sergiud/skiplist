@@ -39,14 +39,14 @@
 #include <utility>
 #include <vector>
 
-#if !defined(HAVE_CPP0X) && _MSC_VER >= 1600
-#define HAVE_CPP0X
-#endif // !defined(HAVE_CPP0X) && _MSC_VER >= 1600
+#if !defined(HAVE_CXX0X) && _MSC_VER >= 1600
+#define HAVE_CXX0X
+#endif // !defined(HAVE_CXX0X) && _MSC_VER >= 1600
 
-#ifdef HAVE_CPP0X
+#ifdef HAVE_CXX0X
 #include <initializer_list>
 #include <random>
-#endif // HAVE_CPP0X
+#endif // HAVE_CXX0X
 
 #ifdef HAVE_BOOST
 #include <boost/random/mersenne_twister.hpp>
@@ -97,17 +97,17 @@ template
     , class T
     , class KeyOfValue
     , class Distribution
-#ifdef HAVE_CPP0X
+#ifdef HAVE_CXX0X
         = std::negative_binomial_distribution<std::size_t>
 #elif defined(HAVE_BOOST)
         = boost::random::negative_binomial_distribution<std::size_t>
-#endif // HAVE_CPP0X
+#endif // HAVE_CXX0X
     , class Engine
-#ifdef HAVE_CPP0X
+#ifdef HAVE_CXX0X
         = std::default_random_engine
 #elif defined(HAVE_BOOST)
         = boost::random::mt19937
-#endif // HAVE_CPP0X
+#endif // HAVE_CXX0X
     , class Compare = std::less<Key>
     , class Allocator = std::allocator<std::pair<const Key, T> >
 >
@@ -296,7 +296,7 @@ public:
         insert(other.cbegin(), other.cend());
     }
 
-#ifdef HAVE_CPP0X
+#ifdef HAVE_CXX0X
 
     SkipList(std::initializer_list<value_type> values,
         const Allocator& allocator = Allocator())
@@ -339,7 +339,7 @@ public:
         return *this;
     }
 
-#endif // HAVE_CPP0X
+#endif // HAVE_CXX0X
 
     SkipList& operator=(const SkipList& other)
     {
@@ -480,7 +480,7 @@ public:
         return allocator_;
     }
 
-#ifdef HAVE_CPP0X
+#ifdef HAVE_CXX0X
 
     template<class V>
     iterator emplace(const_iterator where, V&& value)
@@ -507,7 +507,7 @@ public:
         return *this;
     }
 
-#endif // HAVE_CPP0X
+#endif // HAVE_CXX0X
 
     std::pair<iterator, bool> insert(const_reference value)
     {
@@ -826,11 +826,11 @@ private:
             }
 
             Element* node = xconstruct(
-#ifdef HAVE_CPP0X
+#ifdef HAVE_CXX0X
                 Element(std::forward<value_type>(value))
-#else // !HAVE_CPP0X
+#else // !HAVE_CXX0X
                 Element(value)
-#endif // HAVE_CPP0X
+#endif // HAVE_CXX0X
             );
 
             node->next.reserve(level);
@@ -870,20 +870,20 @@ private:
     }
 
     Element* xconstruct(
-#ifdef HAVE_CPP0X
+#ifdef HAVE_CXX0X
         Element&& value
-#else // !HAVE_CPP0X
+#else // !HAVE_CXX0X
         const Element& value
 #endif
         )
     {
         Element* node = eallocator_.allocate(1);
         eallocator_.construct(node,
-#ifdef HAVE_CPP0X
+#ifdef HAVE_CXX0X
             std::forward<Element>(value)
-#else // !HAVE_CPP0X
+#else // !HAVE_CXX0X
             Element(value)
-#endif // HAVE_CPP0X
+#endif // HAVE_CXX0X
         );
 
         return node;
@@ -1068,17 +1068,17 @@ template
       class Key
     , class T
     , class Distribution
-#ifdef HAVE_CPP0X
+#ifdef HAVE_CXX0X
         = std::negative_binomial_distribution<std::size_t>
 #elif defined(HAVE_BOOST)
         = boost::random::negative_binomial_distribution<std::size_t>
-#endif // HAVE_CPP0X
+#endif // HAVE_CXX0X
     , class Engine
-#ifdef HAVE_CPP0X
+#ifdef HAVE_CXX0X
         = std::default_random_engine
 #elif defined(HAVE_BOOST)
         = boost::random::mt19937
-#endif // HAVE_CPP0X
+#endif // HAVE_CXX0X
     , class Compare = std::less<Key>
     , class Allocator = std::allocator<std::pair<const Key, T> >
 >
@@ -1136,7 +1136,7 @@ public:
     {
     }
 
-#ifdef HAVE_CPP0X
+#ifdef HAVE_CXX0X
 
     SkipListMap(SkipListMap&& other)
         : SkipList(std::move(other))
@@ -1157,7 +1157,7 @@ public:
         return *this;
     }
 
-#endif // HAVE_CPP0X
+#endif // HAVE_CXX0X
 
     T& operator[](const Key& key)
     {
@@ -1171,17 +1171,17 @@ template
 <
       class Key
     , class Distribution
-#ifdef HAVE_CPP0X
+#ifdef HAVE_CXX0X
         = std::negative_binomial_distribution<std::size_t>
 #elif defined(HAVE_BOOST)
         = boost::random::negative_binomial_distribution<std::size_t>
-#endif // HAVE_CPP0X
+#endif // HAVE_CXX0X
     , class Engine
-#ifdef HAVE_CPP0X
+#ifdef HAVE_CXX0X
         = std::default_random_engine
 #elif defined(HAVE_BOOST)
         = boost::random::mt19937
-#endif // HAVE_CPP0X
+#endif // HAVE_CXX0X
     , class Compare = std::less<Key>
     , class Allocator = std::allocator<Key>
 >
@@ -1240,7 +1240,7 @@ public:
     {
     }
 
-#ifdef HAVE_CPP0X
+#ifdef HAVE_CXX0X
 
     SkipListSet(SkipListSet&& other)
         : SkipList(std::move(other))
@@ -1261,7 +1261,7 @@ public:
         return *this;
     }
 
-#endif // HAVE_CPP0X
+#endif // HAVE_CXX0X
 };
 
 namespace std {
