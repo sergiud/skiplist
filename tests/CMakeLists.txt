@@ -18,8 +18,8 @@ include_directories (${skiplist_INCLUDE_DIRS} ${skiplist_INCLUDE_DIR})
 if (VLD_FOUND)
   add_definitions (-DHAVE_VLD)
 
-  include_directories (${VLD_INCLUDE_DIR})
-  link_directories (${VLD_LIBRARIES_DIR})
+  include_directories (${VLD_INCLUDE_DIRS})
+  link_directories (${VLD_LIBRARY_DIRS})
 endif (VLD_FOUND)
 
 if (WIN32)
