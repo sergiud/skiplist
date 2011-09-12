@@ -25,8 +25,6 @@
 #include <vector>
 
 #include <boost/assign.hpp>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/negative_binomial_distribution.hpp>
 #include <boost/range/algorithm.hpp>
 #include <boost/test/unit_test.hpp>
 
