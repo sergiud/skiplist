@@ -205,30 +205,45 @@ BOOST_AUTO_TEST_CASE(copy)
 
 BOOST_AUTO_TEST_CASE(swap)
 {
-    IntSkipList s;
-    BOOST_CHECK_EQUAL(boost::distance(s), 0);
+    IntSkipList l1;
+    BOOST_CHECK_EQUAL(boost::distance(l1), 0);
 
-    s.insert(10);
-    s.insert(5);
-    s.insert(15);
-    s.insert(0);
-    s.insert(11);
-    s.insert(8);
-    s.insert(20);
-    s.insert(-1);
+    l1.insert(10);
+    l1.insert(5);
+    l1.insert(15);
+    l1.insert(0);
+    l1.insert(11);
+    l1.insert(8);
+    l1.insert(20);
+    l1.insert(-1);
 
-    IntSkipList s1 = s;
+    IntSkipList l2 = l1;
 
-    s1.swap(s);
+    l2.swap(l1);
 
-    BOOST_CHECK_EQUAL(s.size(), 8);
-    BOOST_CHECK_EQUAL(s1.size(), 8);
+    BOOST_CHECK_EQUAL(l1.size(), 8);
+    BOOST_CHECK_EQUAL(l2.size(), 8);
 
-    BOOST_CHECK_EQUAL(boost::distance(s), s.size());
-    BOOST_CHECK_EQUAL(boost::distance(s1), s1.size());
+    BOOST_CHECK_EQUAL(boost::distance(l1), l1.size());
+    BOOST_CHECK_EQUAL(boost::distance(l2), l2.size());
 
-    BOOST_CHECK_EQUAL(std::distance(s.rbegin(), s.rend()), s.size());
-    BOOST_CHECK_EQUAL(std::distance(s1.rbegin(), s1.rend()), s1.size());
+    BOOST_CHECK_EQUAL(std::distance(l1.rbegin(), l1.rend()), l1.size());
+    BOOST_CHECK_EQUAL(std::distance(l2.rbegin(), l2.rend()), l2.size());
+
+    IntSkipList s1 = boost::assign::list_of(1)(8)(10)(-7)(20)(-11);
+    IntSkipList s2 = boost::assign::list_of(-7)(1)(8)(10);
+
+    const IntSkipList tmp1 = s1;
+    const IntSkipList tmp2 = s2;
+
+    BOOST_CHECK(s1 != s2);
+
+    std::swap(s1, s2);
+
+    BOOST_CHECK(s1 != tmp1);
+    BOOST_CHECK(s1 == tmp2);
+    BOOST_CHECK(s2 != tmp2);
+    BOOST_CHECK(s2 == tmp1);
 }
 
 BOOST_AUTO_TEST_CASE(comparison)

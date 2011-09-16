@@ -1274,7 +1274,10 @@ public:
 
 namespace std {
 
-// Provide a specialization for std::swap
+// Provide a specialization for std::swap, unless r-value references are
+// available
+
+#ifndef HAVE_CXX0X
 
 template<class Key, class T, class KeyOfValue, class Distribution, class Engine,
     class Compare, class Allocator>
@@ -1284,6 +1287,8 @@ inline void swap(SkipList<Key, T, KeyOfValue, Distribution, Engine, Compare,
 {
     lhs.swap(rhs);
 }
+
+#endif // HAVE_CXX0X
 
 } // namespace std
 
