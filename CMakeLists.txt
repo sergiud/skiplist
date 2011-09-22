@@ -11,6 +11,4 @@ if (NOT UNIX OR APPLE)
   option (Boost_USE_STATIC_LIBS "Use static Boost libraries" ON)
 endif (NOT UNIX OR APPLE)
 
-set (CMAKE_COLOR_MAKEFILE ON)
-
 add_subdirectory (tests)
