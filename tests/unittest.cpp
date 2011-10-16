@@ -324,6 +324,18 @@ BOOST_AUTO_TEST_CASE(map)
     BOOST_CHECK_EQUAL(s[5], 1);
 }
 
+BOOST_AUTO_TEST_CASE(range)
+{
+    SkipListMap<int, int> s =
+        boost::assign::map_list_of(1, 1)(2, 2)(3, 3)(4, 4)(5, 5);
+
+    BOOST_CHECK_EQUAL(std::distance(s.lower_bound(1), s.upper_bound(1)), 1);
+    BOOST_CHECK_EQUAL(std::distance(s.lower_bound(2), s.upper_bound(2)), 1);
+    BOOST_CHECK_EQUAL(std::distance(s.lower_bound(3), s.upper_bound(3)), 1);
+    BOOST_CHECK_EQUAL(std::distance(s.lower_bound(4), s.upper_bound(4)), 1);
+    BOOST_CHECK_EQUAL(std::distance(s.lower_bound(5), s.upper_bound(5)), 1);
+}
+
 #ifdef HAVE_CXX0X
 
 BOOST_AUTO_TEST_CASE(move)
