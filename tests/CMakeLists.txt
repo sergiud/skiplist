@@ -51,5 +51,5 @@ add_test (NAME skiplist-map COMMAND test_skiplist -t map)
 add_test (NAME skiplist-map-range COMMAND test_skiplist -t range)
 
 if (HAVE_CXX0X) # set by skiplist config
-  add_test (move test_skiplist -t move)
+  add_test (NAME skiplist-move COMMAND test_skiplist -t move)
 endif (HAVE_CXX0X)
