@@ -53,6 +53,8 @@
 #include <boost/random/negative_binomial_distribution.hpp>
 #endif // HAVE_BOOST
 
+//! @cond private_details
+
 namespace detail {
 
 //! Identity selection.
@@ -75,7 +77,18 @@ struct Select1st
     }
 };
 
+template<class SkipList, class Iterator>
+inline Iterator moveNext(SkipList& s, Iterator it)
+{
+    if (it != s.end())
+        ++it;
+
+    return it;
+}
+
 } // namespace detail
+
+//! @endcond
 
 /**
  * @brief Skip list implementation.
@@ -630,22 +643,12 @@ public:
 
     const_iterator upper_bound(const key_type& key) const
     {
-        const_iterator it = lower_bound(key);
-
-        if (it != end())
-            ++it;
-
-        return it;
+        return detail::moveNext(*this, lower_bound(key));
     }
 
     iterator upper_bound(const key_type& key)
     {
-        iterator it = lower_bound(key);
-
-        if (it != end())
-            ++it;
-
-        return it;
+        return detail::moveNext(*this, lower_bound(key));
     }
 
     std::pair<iterator, iterator> equal_range(const key_type& key)
@@ -1041,7 +1044,7 @@ inline bool operator<(const SkipList<Key, T, KeyOfValue, Distribution, Engine,
         rhs.begin(), rhs.end());
 }
 
-// // Returns !(x > y)
+// Returns !(x > y)
 template<class Key, class T, class KeyOfValue, class Distribution, class Engine,
     class Compare, class Allocator>
 inline bool operator<=(const SkipList<Key, T, KeyOfValue, Distribution, Engine,
