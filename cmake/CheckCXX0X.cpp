@@ -1,6 +1,6 @@
 // Determine C++0x support by checking the r-value reference availability
 //
-// Copyright (c) 2011 Sergiu Dotenco
+// Copyright (c) 2011, 2020 Sergiu Deitsch
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
