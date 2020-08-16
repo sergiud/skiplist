@@ -1,5 +1,3 @@
-syntax: glob
-
 *-build
 *-build-*
 *.a
@@ -17,22 +15,20 @@ syntax: glob
 *.tmp
 *.user
 *~
-.DS_Store
 .cproject
+.DS_Store
 .project
+_build
+build*
 CMakeCache.txt
 CMakeFiles
 Debug
 Doxyfile
-Makefile
-Release
-_build
-build*
-debug
 html
 ipch
 latex
+Makefile
 moc_*.*
 qrc_*.*
-release
+Release
 ui_*.*
